@@ -1,6 +1,5 @@
 from django.db import models
 
-
 STATUS_CHOICES = ((1, 'Finished'), (2, 'Error'), (3, 'Expired'),
                   (4, 'Performing'), (5, 'Queued'))
 
