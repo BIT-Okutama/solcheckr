@@ -13,11 +13,8 @@ class CheckrAPIView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
 
         # temporarily run analyzer right away
-        # TODO: Only analyze if Solidity code has no errors
         # TODO: Celery queue, find a good way to give result back
         try:
             audit_report = analyze_contract(request.data.get('contract'))
@@ -27,5 +24,11 @@ class CheckrAPIView(CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        return Response(audit_report,
-                        status=status.HTTP_201_CREATED, headers=headers)
+        if audit_report.get('success'):
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+
+            return Response(audit_report, headers=headers,
+                            status=status.HTTP_201_CREATED)
+
+        return Response(audit_report, status=status.HTTP_400_BAD_REQUEST)
