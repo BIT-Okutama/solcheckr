@@ -1,10 +1,11 @@
 from django.urls import include, path
 from django.views.generic import TemplateView
 
-from checkr.api import CheckrAPIView
+from checkr.api import BadgeAPIView, CheckrAPIView
 
 
 api_urls = [
+    path('badge/', BadgeAPIView.as_view()),
     path('audit/', CheckrAPIView.as_view()),
 ]
 

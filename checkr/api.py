@@ -1,7 +1,11 @@
+from django.conf import settings
+from django.http import HttpResponse
 from rest_framework import permissions, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from checkr.models import Audit
 from checkr.serializers import AuditSerializer
 from checkr.utils import analyze_contract
 
@@ -32,3 +36,35 @@ class CheckrAPIView(CreateAPIView):
                             status=status.HTTP_201_CREATED)
 
         return Response(audit_report, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BadgeAPIView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request):
+        github_user = request.query_params.get('user')
+        github_repo = request.query_params.get('repo')
+        file_name = 'fund-me.svg'
+
+        if github_user and github_repo:
+            repo_audits = Audit.objects.filter(
+                github_user=github_user, github_repo=github_repo
+            )
+            if repo_audits.exists():
+                if repo_audits.exists().result:
+                    file_name = 'passed.svg'
+                else:
+                    file_name = 'failed.svg'
+
+            # Improve this implementation
+            badge_file = open(
+                '{}/images/{}'.format(settings.STATICFILES_DIRS[0], file_name),
+                'rb'
+            )
+            response = HttpResponse(content=badge_file)
+            response['Content-Type'] = 'image/svg+xml'
+            return response
+
+        return Response({
+            'details': 'Include GitHub username and repository in URL parameters'
+        }, status=status.HTTP_400_BAD_REQUEST)
