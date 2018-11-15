@@ -26,14 +26,14 @@
       <form v-on:submit.prevent="auditContract()">
         <div class="form-group">
           <label class="montserrat" for="exampleFormControlInput1">Email address</label>
-          <input type="email" class="form-control" id="exampleFormControlInput1" aria-describedby="emailHelpText" placeholder="name@example.com" v-model="newAudit.email">
+          <input type="email" class="form-control" id="exampleFormControlInput1" aria-describedby="emailHelpText" placeholder="name@example.com" v-model="newAudit.email" required="">
           <small id="emailHelpText" class="form-text text-muted">
             Needed in-case the app takes too long, we'll email you the results instead :)
           </small>
         </div>
         <div class="form-group">
           <label class="montserrat" for="contract-code">Solidity code</label>
-          <textarea class="form-control" id="contract-code" rows="3" v-model="newAudit.contract"></textarea>
+          <textarea class="form-control" id="contract-code" rows="3" v-model="newAudit.contract" required=""></textarea>
         </div>
         <button type="submit" class="btn-block btn-lg btn-dark montserrat" >Submit</button>
       </form>
