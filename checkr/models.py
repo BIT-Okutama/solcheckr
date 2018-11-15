@@ -5,8 +5,11 @@ STATUS_CHOICES = ((1, 'Finished'), (2, 'Error'), (3, 'Expired'),
 
 
 class Audit(models.Model):
-    email = models.EmailField()
+    email = models.EmailField(null=True, blank=True)
+    github_user = models.CharField(max_length=40, null=True, blank=True)
+    github_repo = models.CharField(max_length=100, null=True, blank=True)
     contract = models.TextField()
     report = models.TextField(blank=True, default='')
+    result = models.NullBooleanField()
     submitted = models.DateTimeField(auto_now=True)
     status = models.PositiveIntegerField(default=5, choices=STATUS_CHOICES)
