@@ -29,13 +29,16 @@ def analyze_contract(contract):
             broken_string = message[message.index(CONTRACT_FILENAME) +
                                     len(CONTRACT_FILENAME) + 1:]
             separated_list = broken_string.split(':')
+            error_desc = ' '.join([x.strip() for x in separated_list[3:]])
 
             return {
                 'success': False,
                 'error': True,
-                'line': int(separated_list[0]),
+                'filename': CONTRACT_FILENAME,
+                'lineno': int(separated_list[0]),
                 'character': int(separated_list[1]),
-                'details': ' '.join([x.strip() for x in separated_list[3:]])
+                'details': error_desc[:error_desc.index('\n')],
+                'code': error_desc[error_desc.index('\n') + 1:]
             }
 
         return audit_report

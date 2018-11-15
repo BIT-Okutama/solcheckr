@@ -43,20 +43,29 @@
         <h4>Results</h4>
         <small v-on:click="clearResults()"><a href="#">Clear</a></small>
       </div>
-      <div class="alert alert-dark" role="alert" v-if="loading === false && issues.length === 0">
+      <div class="alert alert-dark" role="alert" v-if="loading === false && issues.length === 0 && error === null">
         No errors to show.
       </div>
       <div class="loader" v-if="loading === true"></div>
 
       <div>
-        <div v-bind:class="[issue.type === 'Warning' ? 'alert-danger' : 'alert-warning']" class="alert" role="alert" v-for="issue in issues">
+        <div v-bind:class="[issue.type === 'Warning' ? 'alert-warning' : 'alert-info']" class="alert" role="alert" v-for="issue in issues">
           <p class="text-center">==== ${ issue.title } ====</p>
           <p>Contract: <b>${ issue.contract }</b></p>
           <p>Function: <b>${ issue.function }</b></p>
           <p>${ issue.description }</p>
           <p>--------------------</p>
           <p>In file: ${ issue.filename }:${ issue.lineno }</p>
-          <p><b>${ issue.code }</b></p>
+          <p><b class="code">${ issue.code }</b></p>
+          --------------------
+        </div>
+
+        <div class="alert alert-danger" role="alert" v-if="error !== null">
+          <p class="text-center"><b>==== Compilation Error ====</b></p>
+          <p>Error: ${ error.details }</p>
+          <p>--------------------</p>
+          <p>In file: ${ error.filename }:${ error.lineno }:${ error.character }</p>
+          <p><b class="code">${ error.code }</b></p>
           --------------------
         </div>
       </div>

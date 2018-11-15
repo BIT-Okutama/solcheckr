@@ -18,12 +18,12 @@ textarea.form-control {
 
 .loader {
   margin-top: 15px;
-  border: 16px solid #f3f3f3;
-  border-top: 16px solid #343a3f;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #343a3f;
   border-radius: 50%;
   width: 85px;
   height: 85px;
-  animation: spin 2s linear infinite;
+  animation: spin 1.2s linear infinite;
 }
 
 @keyframes spin {
@@ -47,6 +47,10 @@ textarea.form-control {
 }
 .results-labels small {
   margin-bottom: 0.5rem;
+}
+
+.code {
+  font-family: monospace !important;
 }
 
 /*# sourceMappingURL=styles.css.map */
