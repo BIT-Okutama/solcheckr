@@ -29,22 +29,22 @@
 
       <div>
         <div v-bind:class="[issue.type === 'Warning' ? 'alert-warning' : 'alert-info']" class="alert" role="alert" v-for="(issue, index) in issues" :key="index">
-          <p class="text-center">==== ${ issue.title } ====</p>
-          <p>Contract: <b>${ issue.contract }</b></p>
-          <p>Function: <b>${ issue.function }</b></p>
-          <p>${ issue.description }</p>
+          <p class="text-center">==== {{ issue.title }} ====</p>
+          <p>Contract: <b>{{ issue.contract }}</b></p>
+          <p>Function: <b>{{ issue.function }}</b></p>
+          <p>{{ issue.description }}</p>
           <p>--------------------</p>
-          <p>In file: ${ issue.filename }:${ issue.lineno }</p>
-          <p><b class="code">${ issue.code }</b></p>
+          <p>In file: {{ issue.filename }}:{{ issue.lineno }}</p>
+          <p><b class="code">{{ issue.code }}</b></p>
           --------------------
         </div>
 
         <div class="alert alert-danger" role="alert" v-if="error !== null">
           <p class="text-center"><b>==== Compilation Error ====</b></p>
-          <p>Error: ${ error.details }</p>
+          <p>Error: {{ error.details }}</p>
           <p>--------------------</p>
-          <p>In file: ${ error.filename }:${ error.lineno }:${ error.character }</p>
-          <p><b class="code">${ error.code }</b></p>
+          <p>In file: {{ error.filename }}:{{ error.lineno }}:{{ error.character }}</p>
+          <p><b class="code">{{ error.code }}</b></p>
           --------------------
         </div>
       </div>
@@ -58,7 +58,6 @@ import axios from 'axios'
 
 export default {
   name: 'MainComponent',
-  delimiters: ['${', '}'],
   data () {
     return {
       loading: false,
@@ -71,14 +70,11 @@ export default {
     }
   },
   methods: {
-    asdf () {
-      alert('Yo')
-    },
     auditContract () {
       this.loading = true
       this.issues = []
       this.error = null
-      axios.post('/api/audit/', this.newAudit)
+      axios.post('http://localhost:8000/api/audit/', this.newAudit)
         .then((response) => {
           this.loading = false
           if (response.data && response.data.success) {
