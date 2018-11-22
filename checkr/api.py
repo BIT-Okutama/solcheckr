@@ -1,3 +1,5 @@
+import requests
+
 from django.conf import settings
 from django.http import HttpResponse
 from rest_framework import permissions, status
@@ -38,6 +40,44 @@ class CheckrAPIView(CreateAPIView):
         return Response(audit_report, status=status.HTTP_400_BAD_REQUEST)
 
 
+class GithubCheckrAPIView(CreateAPIView):
+    serializer_class = AuditSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def create(self, request, *args, **kwargs):
+        audit_data = request.data
+
+        if request.data.get('code_url'):
+            code = requests.get(request.data.get('code_url'))
+            audit_data['contract'] = code.text
+            serializer = self.get_serializer(data=audit_data)
+            serializer.is_valid(raise_exception=True)
+
+            # temporarily run analyzer right away
+            # TODO: Celery queue, find a good way to give result back
+            try:
+                audit_report = analyze_contract(request.data.get('contract'))
+            except Exception as e:
+                return Response(
+                    {'details': 'Something wrong happened, please try again'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if audit_report.get('success'):
+                self.perform_create(serializer)
+                headers = self.get_success_headers(serializer.data)
+
+                return Response(audit_report, headers=headers,
+                                status=status.HTTP_201_CREATED)
+
+            return Response(audit_report, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {'details': 'No code provided'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
 class BadgeAPIView(APIView):
     permission_classes = (permissions.AllowAny,)
 
@@ -51,7 +91,7 @@ class BadgeAPIView(APIView):
                 github_user=github_user, github_repo=github_repo
             )
             if repo_audits.exists():
-                if repo_audits.exists().result:
+                if repo_audits.last().result:
                     file_name = 'passed.svg'
                 else:
                     file_name = 'failed.svg'

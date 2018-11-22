@@ -21,7 +21,7 @@ new Vue({
               this.issues = response.data.issues;
             }
           })
-          .catch((err, k) => {
+          .catch((err) => {
             this.loading = false;
             if (err.response.data && err.response.data.error) {
               this.error = err.response.data;

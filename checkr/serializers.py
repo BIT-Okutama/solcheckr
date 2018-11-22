@@ -11,7 +11,7 @@ class AuditSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Check that either email address or GitHub info is provided"""
-        if not data.get('email') and not data.get('github_username'):
+        if not data.get('email') and not data.get('github_user'):
             raise serializers.ValidationError(
                 'Please provide an email address or GitHub details'
             )
