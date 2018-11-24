@@ -63,7 +63,7 @@ CORS_ORIGIN_WHITELIST = (
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend', 'dist')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,7 +129,8 @@ USE_TZ = True
 STATIC_URL = config('STATIC_URL', default='/static/')
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_cdn')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'assets')
+    os.path.join(BASE_DIR, 'assets'),
+    os.path.join(BASE_DIR, 'frontend/dist/static'),
 ]
 
 MEDIA_URL = config('MEDIA_URL', default='/media/')
