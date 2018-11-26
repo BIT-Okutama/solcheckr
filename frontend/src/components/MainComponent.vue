@@ -28,15 +28,14 @@
       <div class="loader" v-if="loading === true"></div>
 
       <div>
-        <div v-bind:class="[issue.type === 'Warning' ? 'alert-warning' : 'alert-info']" class="alert" role="alert" v-for="(issue, index) in issues" :key="index">
-          <p class="text-center">==== {{ issue.title }} ====</p>
-          <p>Contract: <b>{{ issue.contract }}</b></p>
-          <p>Function: <b>{{ issue.function }}</b></p>
-          <p>{{ issue.description }}</p>
-          <p>--------------------</p>
-          <p>In file: {{ issue.filename }}:{{ issue.lineno }}</p>
-          <p><b class="code">{{ issue.code }}</b></p>
-          --------------------
+        <div v-bind:class="[classMap[issue.severity]]" class="alert" role="alert" v-for="(issue, index) in issues" :key="index">
+          <p><b>{{ issue.description }}</b></p>
+          <p v-if="issue.severity !== null">Severity: <b>{{ severityMap[issue.severity] }}</b></p>
+          <p v-if="issue.contract">Contract: <b>{{ issue.contract }}</b></p>
+          <p v-if="issue.sourceMapping.lines">Line(s): {{ issue.sourceMapping.lines[0] }}<span v-if="issue.sourceMapping.lines.length > 1 && issue.sourceMapping.lines[0] != issue.sourceMapping.lines[issue.sourceMapping.lines.length - 1]">:{{ issue.sourceMapping.lines[issue.sourceMapping.lines.length - 1] }}</span></p>
+          <p v-if="issue.lines">Line(s): {{ issue.lines[0] }}<span v-if="issue.lines.length > 1 && issue.lines[0] != issue.lines[issue.lines.length - 1]">:{{ issue.lines[issue.lines.length - 1] }}</span></p>
+          <br/>
+          <p><b class="code" v-if="issue.info">{{ issue.info.replace(/\t/g, "") }}</b></p>
         </div>
 
         <div class="alert alert-danger" role="alert" v-if="error !== null">
@@ -61,6 +60,8 @@ export default {
   data () {
     return {
       loading: false,
+      classMap: ['alert-danger', 'alert-warning', 'alert-info', 'alert-dark'],
+      severityMap: ['High', 'Medium', 'Low', 'Informational'],
       issues: [],
       error: null,
       newAudit: {
