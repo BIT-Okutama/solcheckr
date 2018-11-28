@@ -80,6 +80,7 @@ contract Overflow {
       this.loading = true
       this.issues = []
       this.error = null
+
       axios.post('http://localhost:8000/api/audit/', this.newAudit)
         .then((response) => {
           this.loading = false
@@ -92,10 +93,29 @@ contract Overflow {
           if (err.response.data && err.response.data.error) {
             this.error = err.response.data
           }
+
+          this.highlightError()
         })
     },
     clearResults () {
       this.issues = []
+    },
+    highlightError () {
+      let codeElemNode = document.querySelectorAll('.ace_text-layer')
+      if (codeElemNode && codeElemNode.length > 0 && this.error) {
+        let codeElem = codeElemNode[0].childNodes
+        codeElem.forEach((line, lineNumber) => {
+          line.style.background = lineNumber === this.error.lineno - 1 ? '#753131' : ''
+        })
+      }
+
+      let gutterElemNode = document.querySelectorAll('.ace_gutter-layer')
+      if (gutterElemNode && gutterElemNode.length > 0 && this.error) {
+        let gutterElem = gutterElemNode[0].childNodes
+        gutterElem.forEach((line, lineNumber) => {
+          line.style.background = lineNumber === this.error.lineno - 1 ? '#753131' : ''
+        })
+      }
     },
     editorInit () {
       require('brace/ext/language_tools')
