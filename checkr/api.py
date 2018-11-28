@@ -4,6 +4,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from rest_framework import permissions, status
 from rest_framework.generics import CreateAPIView
+from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,9 +13,15 @@ from checkr.serializers import AuditSerializer
 from checkr.utils import analyze_contract
 
 
-class CheckrAPIView(CreateAPIView):
+class CheckrAPIView(RetrieveModelMixin, CreateAPIView):
+    lookup_field = 'tracking'
+    lookup_url_kwarg = 'tracking'
+    queryset = Audit.objects
     serializer_class = AuditSerializer
     permission_classes = (permissions.AllowAny,)
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

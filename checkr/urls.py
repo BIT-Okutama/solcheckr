@@ -6,6 +6,7 @@ from checkr.api import BadgeAPIView, CheckrAPIView, GithubCheckrAPIView
 
 api_urls = [
     path('badge/', BadgeAPIView.as_view()),
+    path('audit/<str:tracking>/', CheckrAPIView.as_view()),
     path('audit/', CheckrAPIView.as_view()),
     path('github-audit/', GithubCheckrAPIView.as_view()),
 ]
