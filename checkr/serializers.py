@@ -7,7 +7,7 @@ class AuditSerializer(serializers.ModelSerializer):
     class Meta:
         model = Audit
         fields = '__all__'
-        read_only_fields = ('report', 'result', 'status',)
+        read_only_fields = ('report', 'result', 'status', 'tracking',)
 
     def validate(self, data):
         """Check that either email address or GitHub info is provided"""
