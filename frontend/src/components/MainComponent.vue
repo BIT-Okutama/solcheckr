@@ -1,26 +1,23 @@
 <template>
   <div class="container">
     <div class="row mt-5 mb-5">
-    <div class="col-sm-7">
+    <div v-bind:class="[ isResultsOpen ? 'col-sm-7' : 'col-sm-12']">
       <form v-on:submit.prevent="auditContract()">
-<!--         <div class="form-group">
-          <label class="montserrat" for="exampleFormControlInput1">Email address</label>
-          <input type="email" class="form-control" id="exampleFormControlInput1" aria-describedby="emailHelpText" placeholder="name@example.com" v-model="newAudit.email" required="">
-          <small id="emailHelpText" class="form-text text-muted">
-            Needed in-case the app takes too long, we'll email you the results instead :)
-          </small>
-        </div> -->
+        <div class="d-flex justify-content-between">
+          <button type="submit" class="btn btn-md btn-dark font-weight-bold montserrat mb-3 px-5">Submit</button>
+          <button v-on:click="toggleResults()" v-if="!isResultsOpen" type="button" class="btn-md btn-outline-dark montserrat mb-3">Open Results tab</button>
+        </div>
         <editor v-model="newAudit.contract" required="" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
-        <button type="submit" class="btn-block btn-lg btn-dark montserrat mt-3" >Submit</button>
       </form>
     </div>
-    <div class="col-sm-5">
+    <div class="col-sm-5" v-if="isResultsOpen">
       <div class="results-labels">
         <h4>Results</h4>
         <small v-on:click="clearResults()"><a href="#">Clear</a></small>
+        <small v-on:click="toggleResults()"><a href="#">Close</a></small>
       </div>
       <div class="alert alert-dark" role="alert" v-if="loading === false && issues.length === 0 && error === null">
-        No errors to show.
+        Nothing to show.
       </div>
       <div class="loader" v-if="loading === true"></div>
 
@@ -56,6 +53,7 @@ export default {
   name: 'MainComponent',
   data () {
     return {
+      isResultsOpen: false,
       loading: false,
       classMap: ['alert-danger', 'alert-warning', 'alert-info', 'alert-dark'],
       severityMap: ['High', 'Medium', 'Low', 'Informational'],
@@ -77,6 +75,7 @@ contract Overflow {
   },
   methods: {
     auditContract () {
+      this.isResultsOpen = true
       this.loading = true
       this.issues = []
       this.error = null
@@ -121,6 +120,9 @@ contract Overflow {
       require('brace/ext/language_tools')
       require('brace/theme/mono_industrial')
       require('../assets/js/solidity.js')
+    },
+    toggleResults () {
+      this.isResultsOpen = !this.isResultsOpen
     }
   },
   components: {
