@@ -3,18 +3,15 @@
     <div class="row mt-5 mb-5">
     <div class="col-sm-7">
       <form v-on:submit.prevent="auditContract()">
-        <div class="form-group">
+<!--         <div class="form-group">
           <label class="montserrat" for="exampleFormControlInput1">Email address</label>
           <input type="email" class="form-control" id="exampleFormControlInput1" aria-describedby="emailHelpText" placeholder="name@example.com" v-model="newAudit.email" required="">
           <small id="emailHelpText" class="form-text text-muted">
             Needed in-case the app takes too long, we'll email you the results instead :)
           </small>
-        </div>
-        <div class="form-group">
-          <label class="montserrat" for="contract-code">Solidity code</label>
-          <textarea class="form-control" id="contract-code" rows="3" v-model="newAudit.contract" required=""></textarea>
-        </div>
-        <button type="submit" class="btn-block btn-lg btn-dark montserrat" >Submit</button>
+        </div> -->
+        <editor v-model="newAudit.contract" required="" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
+        <button type="submit" class="btn-block btn-lg btn-dark montserrat mt-3" >Submit</button>
       </form>
     </div>
     <div class="col-sm-5">
@@ -65,8 +62,16 @@ export default {
       issues: [],
       error: null,
       newAudit: {
-        'email': null,
-        'contract': null
+        'email': 'benemeritosam@gmail.com',
+        'contract': `pragma solidity ^0.4.18;
+
+contract Overflow {
+  uint256 num = 999999999;
+
+  function addToNum(uint256 _inputNumber) public {
+    num += _inputNumber;
+  }
+}`
       }
     }
   },
@@ -91,7 +96,21 @@ export default {
     },
     clearResults () {
       this.issues = []
+    },
+    editorInit () {
+      require('brace/ext/language_tools')
+      require('brace/theme/mono_industrial')
+      require('../assets/js/solidity.js')
     }
+  },
+  components: {
+    editor: require('vue2-ace-editor')
   }
 }
 </script>
+
+<style scoped>
+.ace_editor {
+  font-size: 16px !important;
+}
+</style>
