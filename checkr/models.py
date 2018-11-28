@@ -2,6 +2,7 @@ import base64
 import zlib
 
 from django.db import models
+from django.utils.crypto import get_random_string
 
 STATUS_CHOICES = ((1, 'Finished'), (2, 'Error'), (3, 'Expired'),
                   (4, 'Performing'), (5, 'Queued'))
@@ -18,7 +19,9 @@ class Audit(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.tracking:
-            self.tracking = base64.encodestring(zlib.compress(
-                bytes(str(self.__class__.objects.count()).encode('utf-8'))
-            )).strip()
+            rand_str = get_random_string()
+            while self.__class__.objects.filter(tracking=rand_str).exists():
+                rand_str = get_random_string()
+
+            self.tracking = rand_str.strip()
         super().save(*args, **kwargs)
