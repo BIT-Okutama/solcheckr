@@ -1,5 +1,6 @@
-import requests
+import ast
 
+import requests
 from django.conf import settings
 from django.http import HttpResponse
 from rest_framework import permissions, status
@@ -13,7 +14,7 @@ from checkr.serializers import AuditSerializer
 from checkr.utils import analyze_contract
 
 
-class CheckrAPIView(RetrieveModelMixin, CreateAPIView):
+class CheckrAPIView(CreateAPIView):
     lookup_field = 'tracking'
     lookup_url_kwarg = 'tracking'
     queryset = Audit.objects
@@ -21,7 +22,11 @@ class CheckrAPIView(RetrieveModelMixin, CreateAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        response = serializer.data
+        response.update({'report': ast.literal_eval(response.get('report'))})
+        return Response(response)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
