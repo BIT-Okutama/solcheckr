@@ -6,6 +6,7 @@ import router from './router'
 import './assets/css/app.scss'
 
 Vue.config.productionTip = false
+Vue.set(Vue.prototype, '_', require('lodash'))
 
 /* eslint-disable no-new */
 new Vue({
