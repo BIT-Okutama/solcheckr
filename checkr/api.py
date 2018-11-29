@@ -27,8 +27,6 @@ class CheckrAPIView(RetrieveModelMixin, CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # temporarily run analyzer right away
-        # TODO: Celery queue, find a good way to give result back
         try:
             audit_report = analyze_contract(request.data.get('contract'))
         except Exception as e:
@@ -38,8 +36,9 @@ class CheckrAPIView(RetrieveModelMixin, CreateAPIView):
             )
 
         if audit_report.get('success'):
-            self.perform_create(serializer)
+            serializer.save(report=str(audit_report.get('issues')), status=1)
             headers = self.get_success_headers(serializer.data)
+            audit_report.update({'tracking': serializer.instance.tracking})
 
             return Response(audit_report, headers=headers,
                             status=status.HTTP_201_CREATED)
