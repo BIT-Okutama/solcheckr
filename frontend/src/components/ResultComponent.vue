@@ -1,14 +1,9 @@
 <template>
   <div class="container">
     <div class="row mt-5 mb-5">
-    <div v-bind:class="[ isResultsOpen ? 'col-sm-7' : 'col-sm-12']">
-      <form v-on:submit.prevent="auditContract()">
-        <div class="d-flex justify-content-between">
-          <button :disabled="newAudit.contract.trim().length < 25" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat mb-3 px-5">Submit</button>
-          <button v-on:click="toggleResults()" v-if="!isResultsOpen" type="button" class="btn-md btn-outline-dark montserrat mb-3">Open Results tab</button>
-        </div>
-        <editor v-model="newAudit.contract" required="" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
-      </form>
+    <div class="col-sm-12 d-flex justify-content-center">
+      <div class="loader" v-if="loading === true"></div>
+      <editor v-if="!loading" v-model="auditInfo.contract" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
     </div>
     <div class="col-sm-5" v-if="isResultsOpen">
       <div class="results-labels">
@@ -19,7 +14,6 @@
       <div class="alert alert-dark" role="alert" v-if="loading === false && issues.length === 0 && error === null">
         Nothing to show.
       </div>
-      <div class="loader" v-if="loading === true"></div>
 
       <div>
         <div v-bind:class="[classMap[issue.severity]]" class="alert" role="alert" v-for="(issue, index) in issues" :key="index">
@@ -50,45 +44,34 @@
 import axios from 'axios'
 
 export default {
-  name: 'MainComponent',
+  name: 'ResultComponent',
   data () {
     return {
       isResultsOpen: false,
-      loading: false,
+      loading: true,
       classMap: ['alert-danger', 'alert-warning', 'alert-info', 'alert-dark'],
       severityMap: ['High', 'Medium', 'Low', 'Informational'],
       issues: [],
       error: null,
-      newAudit: {
-        'email': 'benemeritosam@gmail.com',
-        'contract': `pragma solidity ^0.4.18;
-
-contract SampleReentrancy {
-
-  mapping(address => uint) public balances;
-
-  function donate(address _to) public payable {
-    balances[_to] += msg.value;
-  }
-
-  function balanceOf(address _who) public view returns (uint balance) {
-    return balances[_who];
-  }
-
-  function withdraw(uint _amount) public {
-    if(balances[msg.sender] >= _amount) {
-      if(msg.sender.call.value(_amount)()) {
-        _amount;
-      }
-      balances[msg.sender] -= _amount;
+      auditInfo: {contract: ''}
     }
-  }
-
-  function() public payable {}
-}
-`
-      }
-    }
+  },
+  mounted () {
+    axios.get(`http://localhost:8000/api/audit/${this.$route.params.auditTracker}`)
+      .then((response) => {
+        // this.loading = false
+        if (response.data && response.data.id) {
+          this.auditInfo = response.data
+          console.log(this.auditInfo, 'inf')
+        }
+      })
+      .catch((err) => {
+        console.log(err, 'error!')
+        this.loading = false
+        if (err.response.data && err.response.data.error) {
+          this.error = err.response.data
+        }
+      })
   },
   methods: {
     auditContract () {
@@ -134,7 +117,8 @@ contract SampleReentrancy {
         })
       }
     },
-    editorInit () {
+    editorInit (editorElem) {
+      editorElem.setReadOnly(true)
       require('brace/ext/language_tools')
       require('brace/theme/mono_industrial')
       require('../assets/js/solidity.js')
