@@ -1,17 +1,19 @@
 import ast
+import re
 
 import requests
 from django.conf import settings
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, GenericAPIView
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from checkr.models import Audit
-from checkr.serializers import AuditSerializer
-from checkr.utils import analyze_contract
+from checkr.models import Audit, GithubAudit
+from checkr.serializers import AuditSerializer, GithubAuditSerializer
+from checkr.utils import analyze_contract, analyze_repository
 
 
 class CheckrAPIView(CreateAPIView):
@@ -22,7 +24,7 @@ class CheckrAPIView(CreateAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, *args, **kwargs):
-        instance = self.get_object()
+        instance = get_object_or_404(self.queryset, tracking=self.kwargs.get('tracking'))
         serializer = self.get_serializer(instance)
         response = serializer.data
         if response.get('report'):
@@ -61,42 +63,49 @@ class CheckrAPIView(CreateAPIView):
         return Response(audit_report, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GithubCheckrAPIView(CreateAPIView):
-    serializer_class = AuditSerializer
+class GithubCheckrAPIView(GenericAPIView):
+    lookup_field = 'tracking'
+    lookup_url_kwarg = 'tracking'
+    queryset = GithubAudit.objects
+    serializer_class = GithubAuditSerializer
     permission_classes = (permissions.AllowAny,)
 
-    def create(self, request, *args, **kwargs):
-        audit_data = request.data
+    def get(self, request, *args, **kwargs):
+        # TODO : Files?
+        instance = get_object_or_404(self.queryset, tracking=self.kwargs.get('tracking'))
+        serializer = self.get_serializer(instance)
+        response = serializer.data
+        if response.get('report'):
+            response.update({'report': ast.literal_eval(response.get('report'))})
+        return Response(response)
 
-        if request.data.get('code_url'):
-            code = requests.get(request.data.get('code_url'))
-            audit_data['contract'] = code.text
-            serializer = self.get_serializer(data=audit_data)
-            serializer.is_valid(raise_exception=True)
+    def post(self, request, *args, **kwargs):
+        github_repo = ''
+        if request.data.get('repository_url'):
+            repo_regex = r'^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/(.+).git$'
+            match_url = re.match(repo_regex, request.data.get('repository_url'))
 
-            # temporarily run analyzer right away
-            # TODO: Celery queue, find a good way to give result back
-            try:
-                audit_report = analyze_contract(request.data.get('contract'))
-            except Exception as e:
+            if not match_url:
                 return Response(
-                    {'details': 'Something wrong happened, please try again'},
+                    {'details': 'The provided GitHub repository URL is invalid'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            if audit_report.get('success'):
-                self.perform_create(serializer)
-                headers = self.get_success_headers(serializer.data)
+            url_tokens = match_url.groups()
+            github_repo = '/'.join([x for x in url_tokens[len(url_tokens) - 2:]])
 
-                return Response(audit_report, headers=headers,
-                                status=status.HTTP_201_CREATED)
+        try:
+            audit_report = analyze_repository(github_repo)
+        except Exception as e:
+            return Response(
+                {'details': 'Something wrong happened, please try again'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-            return Response(audit_report, status=status.HTTP_400_BAD_REQUEST)
+        if audit_report.get('success'):
+            return Response(audit_report, status=status.HTTP_201_CREATED)
 
-        return Response(
-            {'details': 'No code provided'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response(audit_report, status=status.HTTP_400_BAD_REQUEST)
 
 
 class BadgeAPIView(APIView):
