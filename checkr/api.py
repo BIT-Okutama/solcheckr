@@ -42,7 +42,16 @@ class CheckrAPIView(CreateAPIView):
             )
 
         if audit_report.get('success'):
-            serializer.save(report=str(audit_report.get('issues')))
+            passed_test = True  # passed or failed test
+            for issue in audit_report.get('issues'):
+                if issue.get('severity') < 3:
+                    passed_test = False
+                    break
+
+            serializer.save(
+                report=str(audit_report.get('issues')),
+                result=passed_test
+            )
             headers = self.get_success_headers(serializer.data)
             audit_report.update({'tracking': serializer.instance.tracking})
 
