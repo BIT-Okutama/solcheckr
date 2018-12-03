@@ -1,22 +1,8 @@
-import base64
-import zlib
-
 from django.db import models
 from django.utils.crypto import get_random_string
 
-STATUS_CHOICES = ((1, 'Finished'), (2, 'Error'), (3, 'Expired'),
-                  (4, 'Performing'), (5, 'Queued'))
 
-
-class Audit(models.Model):
-    email = models.EmailField(null=True, blank=True)
-    contract = models.TextField()
-    report = models.TextField(blank=True, default='')
-    result = models.NullBooleanField()
-    submitted = models.DateTimeField(auto_now=True)
-    status = models.PositiveIntegerField(default=5, choices=STATUS_CHOICES)
-    tracking = models.CharField(max_length=100, null=True, blank=True)
-
+class TrackingMixin(object):
     def save(self, *args, **kwargs):
         if not self.tracking:
             rand_str = get_random_string()
@@ -25,3 +11,20 @@ class Audit(models.Model):
 
             self.tracking = rand_str.strip()
         super().save(*args, **kwargs)
+
+
+class Audit(TrackingMixin, models.Model):
+    contract = models.TextField()
+    report = models.TextField(blank=True, default='')
+    result = models.NullBooleanField()
+    submitted = models.DateTimeField(auto_now=True)
+    tracking = models.CharField(max_length=100, null=True, blank=True)
+
+
+class GithubAudit(TrackingMixin, models.Model):
+    repo = models.CharField(max_length=200)
+    files_directory = models.CharField(max_length=200)
+    report = models.TextField(blank=True, default='')
+    result = models.NullBooleanField()
+    submitted = models.DateTimeField(auto_now=True)
+    tracking = models.CharField(max_length=100, null=True, blank=True)
