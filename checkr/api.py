@@ -25,7 +25,8 @@ class CheckrAPIView(CreateAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         response = serializer.data
-        response.update({'report': ast.literal_eval(response.get('report'))})
+        if response.get('report'):
+            response.update({'report': ast.literal_eval(response.get('report'))})
         return Response(response)
 
     def create(self, request, *args, **kwargs):
@@ -41,7 +42,7 @@ class CheckrAPIView(CreateAPIView):
             )
 
         if audit_report.get('success'):
-            serializer.save(report=str(audit_report.get('issues')), status=1)
+            serializer.save(report=str(audit_report.get('issues')))
             headers = self.get_success_headers(serializer.data)
             audit_report.update({'tracking': serializer.instance.tracking})
 

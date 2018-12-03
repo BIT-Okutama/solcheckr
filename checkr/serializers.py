@@ -1,26 +1,17 @@
 from rest_framework import serializers
 
-from checkr.models import Audit
+from checkr.models import Audit, GithubAudit
 
 
 class AuditSerializer(serializers.ModelSerializer):
     class Meta:
         model = Audit
         fields = '__all__'
-        read_only_fields = ('report', 'result', 'status', 'tracking',)
+        read_only_fields = ('report', 'result', 'tracking',)
 
-    def validate(self, data):
-        """Check that either email address or GitHub info is provided"""
-        if not data.get('email') and not data.get('github_user'):
-            raise serializers.ValidationError(
-                'Please provide an email address or GitHub details'
-            )
 
-        incomplete_github = ((data.get('github_user') and not data.get('github_repo')) or
-                             (data.get('github_repo') and not data.get('github_user')))
-
-        if incomplete_github:
-            raise serializers.ValidationError(
-                'Please provide both GitHub username and repository'
-            )
-        return data
+class GithubAuditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GithubAudit
+        fields = '__all__'
+        read_only_fields = ('files_directory', 'report', 'result', 'tracking',)
