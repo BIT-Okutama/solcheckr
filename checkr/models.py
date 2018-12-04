@@ -23,7 +23,7 @@ class Audit(TrackingMixin, models.Model):
 
 class GithubAudit(TrackingMixin, models.Model):
     repo = models.CharField(max_length=200)
-    files_directory = models.CharField(max_length=200)
+    contracts = models.TextField(blank=True, default='')
     report = models.TextField(blank=True, default='')
     result = models.NullBooleanField()
     submitted = models.DateTimeField(auto_now=True)
