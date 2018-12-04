@@ -8,6 +8,7 @@ api_urls = [
     path('badge/', BadgeAPIView.as_view()),
     path('audit/<str:tracking>/', CheckrAPIView.as_view()),
     path('audit/', CheckrAPIView.as_view()),
+    path('github-audit/<str:tracking>/', GithubCheckrAPIView.as_view()),
     path('github-audit/', GithubCheckrAPIView.as_view()),
 ]
 

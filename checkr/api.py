@@ -71,12 +71,12 @@ class GithubCheckrAPIView(GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, *args, **kwargs):
-        # TODO : Files?
         instance = get_object_or_404(self.queryset, tracking=self.kwargs.get('tracking'))
         serializer = self.get_serializer(instance)
         response = serializer.data
         if response.get('report'):
             response.update({'report': ast.literal_eval(response.get('report'))})
+            response.update({'contracts': ast.literal_eval(response.get('contracts'))})
         return Response(response)
 
     def post(self, request, *args, **kwargs):

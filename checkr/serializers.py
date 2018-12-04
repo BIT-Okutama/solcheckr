@@ -14,4 +14,4 @@ class GithubAuditSerializer(serializers.ModelSerializer):
     class Meta:
         model = GithubAudit
         fields = '__all__'
-        read_only_fields = ('files_directory', 'report', 'result', 'tracking',)
+        read_only_fields = ('contracts', 'report', 'result', 'tracking',)
