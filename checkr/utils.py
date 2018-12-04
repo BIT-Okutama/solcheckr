@@ -1,6 +1,7 @@
 import ast
 import json
 import os
+import shutil
 import subprocess
 
 import requests
@@ -71,7 +72,6 @@ def analyze_contract(contract):
 
 
 def initialize_directory(repo_name):
-    # TODO : Handle event where repository has been previously checked (inside else)
     if repo_name:
         folder_name = repo_name.replace('/', '+')
         save_path = os.path.join('contracts', folder_name)
@@ -88,17 +88,15 @@ def get_contracts_from_list(save_path, repo_name, file_list=None, session=None):
     """Download all contracts within an array of GitHub files. Then return list of contract data."""
     github_raw_api = 'https://raw.githubusercontent.com/{}/master/'.format(repo_name)
 
-    contract_list = []
+    contract_list = {}
     if file_list and session:
         # Download each file from the list
         for file in file_list:
             file_data = session.get('{}{}'.format(github_raw_api, file.get('path')))
             with open(os.path.join(save_path, file.get('name')), 'wb') as f:
                 f.write(file_data.content)
-            contract_list.append({
-                'name': file.get('name'),
-                'code': file_data.text
-            })
+
+            contract_list[file.get('name')] = file_data.text
         return contract_list
     return None
 
@@ -120,22 +118,22 @@ def analyze_repository(repository=None):
 
         # Initialize new GithubAudit instance
         save_path = initialize_directory(repository)
-        github_audit_instance = GithubAudit(repo=repository, files_directory=save_path)
+        github_audit_instance = GithubAudit(repo=repository)
 
         # Fetch Solidity file list from GitHub API
-        all_contracts = []
+        all_contracts = {}
         response = session.get('{}{}'.format(github_api, repository))
         if response.status_code == 200 and response.text:
             response_json = json.loads(response.text)
 
             if response_json.get('total_count') > 0:
                 # download all contracts from first page, save directory
-                all_contracts = all_contracts + get_contracts_from_list(
+                all_contracts.update(get_contracts_from_list(
                     save_path,
                     repository,
                     response_json.get('items'),
                     session
-                )
+                ))
 
                 # download all contracts all other pages
                 contracts = response_json.get('total_count')
@@ -145,12 +143,12 @@ def analyze_repository(repository=None):
                         page_response = session.get('{}&page={}'.format(github_url, page))
                         page_response_json = json.loads(page_response.text)
                         if page_response_json.get('items'):
-                            all_contracts = all_contracts + get_contracts_from_list(
+                            all_contracts.update(get_contracts_from_list(
                                 save_path,
                                 repository,
                                 page_response_json.get('items'),
                                 session
-                            )
+                            ))
 
         # Audit downloaded files
         terminal_audit = subprocess.run(
@@ -171,8 +169,14 @@ def analyze_repository(repository=None):
             if issue.get('severity') < 3:
                 passed_test = False
                 break
+
+        github_audit_instance.contracts = json.dumps(all_contracts)
         github_audit_instance.result = passed_test
         github_audit_instance.save()
+
+        # clean saved files
+        if os.path.exists(save_path):
+            shutil.rmtree(save_path, ignore_errors=True)
 
         if 'Compilation warnings/errors' in audit_report:
             # TODO!!!
