@@ -2,9 +2,19 @@
   <div>
     <div class="container">
       <div class="row mt-5 mb-5">
-        <div class="col-sm-12 d-flex justify-content-center">
+        <div class="col-sm-2 d-flex justify-content-center" style="height: 500px">
+          <div class="text-center w-100">
+          <b><i class="fas fa-file-code" style="font-size: 1.5em"></i></b><br/>
+          <b>Contracts</b>
+          <div class="divider"></div>
+          <ul class="pl-0 text-center list-unstyled">
+            <li class="mb-2" v-for="(contract, name) in auditInfo.contracts" :key="name" v-on:click="switchContract(name)" v-bind:class="{ 'font-weight-bold bg-dark text-white rounded': name === openedContract }">{{ name }}</li>
+          </ul>
+          </div>
+        </div>
+        <div class="col-sm-10 d-flex justify-content-center">
           <div class="loader" v-if="loading === true"></div>
-          <editor v-if="!loading" v-model="auditInfo.contract" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
+          <editor v-if="!loading" v-model="auditInfo.contracts[openedContract]" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
         </div>
       </div>
     </div>
@@ -36,6 +46,7 @@ export default {
   props: ['audit_data'],
   data () {
     return {
+      openedContract: '',
       loading: true,
       classMap: ['alert-danger', 'alert-warning', 'alert-info', 'alert-dark'],
       severityMap: ['High', 'Medium', 'Low', 'Informational'],
@@ -49,6 +60,7 @@ export default {
         this.loading = false
         if (response.data && response.data.id) {
           this.auditInfo = response.data
+          this.openedContract = this._.keys(this.auditInfo.contracts).pop()
           let sortedReport = this._.orderBy(this.auditInfo.report, ['severity', 'vuln'], ['asc', 'asc'])
           // use sorted report for proper display
           console.log(sortedReport, 'inf')
@@ -69,6 +81,9 @@ export default {
       require('brace/ext/language_tools')
       require('brace/theme/mono_industrial')
       require('../assets/js/solidity.js')
+    },
+    switchContract (name) {
+      this.openedContract = name
     }
   },
   components: {
