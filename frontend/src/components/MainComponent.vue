@@ -4,10 +4,24 @@
     <div v-bind:class="[ isResultsOpen ? 'col-sm-7' : 'col-sm-12']">
       <form v-on:submit.prevent="auditContract()">
         <div class="d-flex justify-content-between">
-          <button :disabled="newAudit.contract.trim().length < 25" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat mb-3 px-5">Submit</button>
+          <div class="mb-3">
+            <button :disabled="(auditType === 'contract' && newAudit.contract.trim().length < 25) || (auditType === 'repository' && !repoUrl)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat px-5">Submit</button>
+            <button v-on:click="toggleAuditType()" v-if="auditType === 'contract'" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fab fa-github"></i> GitHub scan</button>
+            <button v-on:click="toggleAuditType()" v-if="auditType === 'repository'" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-code"></i> Code scan</button>
+          </div>
           <button v-on:click="toggleResults()" v-if="!isResultsOpen" type="button" class="btn-md btn-outline-dark montserrat mb-3">Open Results tab</button>
         </div>
-        <editor v-model="newAudit.contract" required="" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
+        <editor v-if="auditType === 'contract'" v-model="newAudit.contract" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
+        <div v-if="auditType === 'repository'" class="row justify-content-center align-items-center text-center" style="height: 500px;">
+          <div class="col-sm-8">
+            <h1><i class="fab fa-github"></i></h1>
+            <div class="form-group">
+              <label for="repository_url">GitHub repository</label>
+              <input type="text" v-model="repoUrl" class="form-control" id="repository_url" aria-describedby="repository_url_help" placeholder="ex. https://github.com/githubusername/helloworld.git">
+              <small id="repository_url_help" class="form-text text-muted">Make sure the repository is public. HTTPS and SSH is supported.<br/>Experimental feature, a lot of things to improve :)</small>
+            </div>
+          </div>
+        </div>
       </form>
     </div>
     <div class="col-sm-5" v-if="isResultsOpen">
@@ -54,13 +68,14 @@ export default {
   data () {
     return {
       isResultsOpen: false,
+      auditType: 'contract',
       loading: false,
       classMap: ['alert-danger', 'alert-warning', 'alert-info', 'alert-dark'],
       severityMap: ['High', 'Medium', 'Low', 'Informational'],
       issues: [],
       error: null,
+      repoUrl: null,
       newAudit: {
-        'email': 'benemeritosam@gmail.com',
         'contract': `pragma solidity ^0.4.18;
 
 contract SampleReentrancy {
@@ -97,22 +112,39 @@ contract SampleReentrancy {
       this.issues = []
       this.error = null
 
-      axios.post('http://localhost:8000/api/audit/', this.newAudit)
-        .then((response) => {
-          this.loading = false
-          if (response.data && response.data.success) {
-            this.$router.push({ path: `/audit/${response.data.tracking}` })
-            this.issues = response.data.issues
-          }
-        })
-        .catch((err) => {
-          this.loading = false
-          if (err.response.data && err.response.data.error) {
-            this.error = err.response.data
-          }
+      if (this.auditType === 'contract') {
+        axios.post('http://localhost:8000/api/audit/', this.newAudit)
+          .then((response) => {
+            this.loading = false
+            if (response.data && response.data.success) {
+              this.$router.push({ path: `/audit/${response.data.tracking}` })
+              this.issues = response.data.issues
+            }
+          })
+          .catch((err) => {
+            this.loading = false
+            if (err.response.data && err.response.data.error) {
+              this.error = err.response.data
+            }
 
-          this.highlightError()
-        })
+            this.highlightError()
+          })
+      } else {
+        axios.post('http://localhost:8000/api/github-audit/', {repository_url: this.repoUrl})
+          .then((response) => {
+            this.loading = false
+            if (response.data && response.data.success) {
+              this.$router.push({ path: `/github-audit/${response.data.tracking}` })
+              console.log(response.data, 'RESPONSE')
+            }
+          })
+          .catch((err) => {
+            this.loading = false
+            if (err.response.data && err.response.data.error) {
+              this.error = err.response.data
+            }
+          })
+      }
     },
     clearResults () {
       this.issues = []
@@ -141,6 +173,9 @@ contract SampleReentrancy {
     },
     toggleResults () {
       this.isResultsOpen = !this.isResultsOpen
+    },
+    toggleAuditType () {
+      this.auditType = this.auditType === 'contract' ? 'repository' : 'contract'
     }
   },
   components: {
