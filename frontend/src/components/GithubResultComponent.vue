@@ -31,17 +31,27 @@
         </div>
       </div>
     </div>
-    <div v-if="!loading" class="row mt-5 mx-0 results-div text-white">
+
+    <div v-if="!loading" class="row mt-5 pb-5 mx-0 results-div text-white">
       <div class="container">
-        <h1 class="mt-4 mb-1"><b>Security Report</b></h1>
-        <div v-bind:class="[classMap[issue.severity]]" class="alert" role="alert" v-for="(issue, index) in auditInfo.report" :key="index">
-          <p><b>{{ issue.description }}</b></p>
-          <p v-if="issue.severity !== null">Severity: <b>{{ severityMap[issue.severity] }}</b></p>
-          <p v-if="issue.contract">Contract: <b>{{ issue.contract }}</b></p>
-          <p v-if="issue.sourceMapping.lines">Line(s): {{ issue.sourceMapping.lines[0] }}<span v-if="issue.sourceMapping.lines.length > 1 && issue.sourceMapping.lines[0] != issue.sourceMapping.lines[issue.sourceMapping.lines.length - 1]">:{{ issue.sourceMapping.lines[issue.sourceMapping.lines.length - 1] }}</span></p>
-          <p v-if="issue.lines">Line(s): {{ issue.lines[0] }}<span v-if="issue.lines.length > 1 && issue.lines[0] != issue.lines[issue.lines.length - 1]">:{{ issue.lines[issue.lines.length - 1] }}</span></p>
-          <br/>
-          <p><b class="code" v-if="issue.info">{{ issue.info.replace(/\t/g, "") }}</b></p>
+        <h2 class="mt-4 mb-1"><b><i class="fas fa-shield-alt"></i> Vulnerability Details</b></h2>
+        <span class="montserrat">Please click a vulnerability to view detailed information about it. </span>
+        <div class="accordion text-dark mt-5" id="reportAccordion">
+          <div v-for="(issue, index) in sortedReport" :key="index" class="card">
+            <div class="card-header pl-1 font-weight-bold" v-bind:id="`heading${index}`">
+              <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <button v-bind:class="index === 0 ? '' : 'collapsed'" class="btn w-75 bg-transparent text-left" type="button" data-toggle="collapse" v-bind:data-target="`#collapse${index}`" v-bind:aria-expanded="index === 0" v-bind:aria-controls="`collapse${index}`"><span v-bind:class="[classMap[issue.severity]]" class="badge badge-pill mr-2" style="width: 120px;">{{ severityMap[issue.severity] }}</span> {{ issue.name }}
+                </button>
+                <span class="badge badge-pill text-dark">{{ issue.instances.length }}</span>
+              </h5>
+            </div>
+
+            <div v-bind:id="`collapse${index}`" v-bind:class="index === 0 ? 'show' : ''" class="collapse" v-bind:aria-labelledby="`heading${index}`" data-parent="#reportAccordion">
+              <div class="card-body">
+                <li v-for="(instance, instance_index) in issue.instances" :key="instance_index">{{ instance.info }}</li>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -56,11 +66,12 @@ export default {
   props: ['audit_data'],
   data () {
     return {
+      sortedReport: [],
       badgeMarkdown: '',
       openedContract: '',
       loading: true,
-      classMap: ['alert-danger', 'alert-warning', 'alert-info', 'alert-dark'],
-      severityMap: ['High', 'Medium', 'Low', 'Informational'],
+      classMap: ['badge-danger', 'badge-warning', 'badge-info', 'badge-dark'],
+      severityMap: ['High Impact', 'Medium Impact', 'Low Impact', 'Informational'],
       pageLink: window.location.href,
       auditInfo: {contract: ''}
     }
@@ -72,11 +83,22 @@ export default {
         if (response.data && response.data.id) {
           this.auditInfo = response.data
           this.badgeMarkdown = `[![SolCheckr](https://solcheckr.localtunnel.me/api/badge?tracking=${this.auditInfo.tracking})](https://solcheckr.localtunnel.me/#/github-audit/${this.auditInfo.tracking})`
-          this.openedContract = this._.keys(this.auditInfo.contracts).pop()
-          let sortedReport = this._.orderBy(this.auditInfo.report, ['severity', 'vuln'], ['asc', 'asc'])
-          // use sorted report for proper display
-          console.log(sortedReport, 'inf')
-          console.log(response.data, 'inf')
+          this.openedContract = this._.keys(this.auditInfo.contracts)[0]
+
+          let previousName = ''
+          let rawReport = {}
+          this._.forEach(this.auditInfo.report, (item) => {
+            if (item.description !== previousName && !rawReport[item.description]) {
+              rawReport[item.description] = {
+                name: item.description,
+                severity: item.severity,
+                instances: [item]
+              }
+            } else {
+              rawReport[item.description].instances.push(item)
+            }
+          })
+          this.sortedReport = this._.orderBy(rawReport, ['severity', 'name'], ['asc', 'asc'])
         }
       })
       .catch((err) => {

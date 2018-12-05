@@ -1,27 +1,45 @@
 <template>
   <div>
-    <div class="container">
+    <div class="w-100 px-5">
       <div class="row mt-5 mb-5">
+        <div class="col-sm-12 mb-5 d-flex justify-content-between align-items-center">
+          <div>
+          <h5>Security Report for</h5>
+          <h4 class="font-weight-bold"><i class="fas fa-code"></i> Submitted code</h4>
+          <small>Submitted: {{ (new Date(auditInfo.submitted)).toString() }}</small>
+          </div>
+          <div>
+            <span class="font-weight-bold">Share this report:</span><br/>
+            <span class="mb-5"><input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <i class="fas fa-copy"></i></span>
+          </div>
+        </div>
         <div class="col-sm-12 d-flex justify-content-center">
           <div class="loader" v-if="loading === true"></div>
           <editor v-if="!loading" v-model="auditInfo.contract" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
         </div>
       </div>
     </div>
-    <div v-if="!loading" class="row mt-5 mx-0 results-div text-white">
+
+    <div v-if="!loading" class="row mt-5 pb-5 mx-0 results-div text-white">
       <div class="container">
-        <div class="d-flex justify-content-between">
-          <h1 class="mt-4 mb-1"><b>Security Report</b></h1>
-          <span class="montserrat mt-4 mb-5"><b>Share this report:</b><br/>{{ pageLink }}</span>
-        </div>
-        <div v-bind:class="[classMap[issue.severity]]" class="alert" role="alert" v-for="(issue, index) in auditInfo.report" :key="index">
-          <p><b>{{ issue.description }}</b></p>
-          <p v-if="issue.severity !== null">Severity: <b>{{ severityMap[issue.severity] }}</b></p>
-          <p v-if="issue.contract">Contract: <b>{{ issue.contract }}</b></p>
-          <p v-if="issue.sourceMapping.lines">Line(s): {{ issue.sourceMapping.lines[0] }}<span v-if="issue.sourceMapping.lines.length > 1 && issue.sourceMapping.lines[0] != issue.sourceMapping.lines[issue.sourceMapping.lines.length - 1]">:{{ issue.sourceMapping.lines[issue.sourceMapping.lines.length - 1] }}</span></p>
-          <p v-if="issue.lines">Line(s): {{ issue.lines[0] }}<span v-if="issue.lines.length > 1 && issue.lines[0] != issue.lines[issue.lines.length - 1]">:{{ issue.lines[issue.lines.length - 1] }}</span></p>
-          <br/>
-          <p><b class="code" v-if="issue.info">{{ issue.info.replace(/\t/g, "") }}</b></p>
+        <h2 class="mt-4 mb-1"><b><i class="fas fa-shield-alt"></i> Vulnerability Details</b></h2>
+        <span class="montserrat">Please click a vulnerability to view detailed information about it. </span>
+        <div class="accordion text-dark mt-5" id="reportAccordion">
+          <div v-for="(issue, index) in sortedReport" :key="index" class="card">
+            <div class="card-header pl-1 font-weight-bold" v-bind:id="`heading${index}`">
+              <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <button v-bind:class="index === 0 ? '' : 'collapsed'" class="btn w-75 bg-transparent text-left" type="button" data-toggle="collapse" v-bind:data-target="`#collapse${index}`" v-bind:aria-expanded="index === 0" v-bind:aria-controls="`collapse${index}`"><span v-bind:class="[classMap[issue.severity]]" class="badge badge-pill mr-2" style="width: 120px;">{{ severityMap[issue.severity] }}</span> {{ issue.name }}
+                </button>
+                <span class="badge badge-pill text-dark">{{ issue.instances.length }}</span>
+              </h5>
+            </div>
+
+            <div v-bind:id="`collapse${index}`" v-bind:class="index === 0 ? 'show' : ''" class="collapse" v-bind:aria-labelledby="`heading${index}`" data-parent="#reportAccordion">
+              <div class="card-body">
+                <li v-for="(instance, instance_index) in issue.instances" :key="instance_index">{{ instance.info }}</li>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -35,9 +53,10 @@ export default {
   name: 'ResultComponent',
   data () {
     return {
+      sortedReport: [],
       loading: true,
-      classMap: ['alert-danger', 'alert-warning', 'alert-info', 'alert-dark'],
-      severityMap: ['High', 'Medium', 'Low', 'Informational'],
+      classMap: ['badge-danger', 'badge-warning', 'badge-info', 'badge-dark'],
+      severityMap: ['High Impact', 'Medium Impact', 'Low Impact', 'Informational'],
       pageLink: window.location.href,
       auditInfo: {contract: ''}
     }
@@ -48,9 +67,22 @@ export default {
         this.loading = false
         if (response.data && response.data.id) {
           this.auditInfo = response.data
-          let sortedReport = this._.orderBy(this.auditInfo.report, ['severity', 'vuln'], ['asc', 'asc'])
-          // use sorted report for proper display
-          console.log(sortedReport, 'inf')
+          console.log(this.auditInfo, 'f')
+
+          let previousName = ''
+          let rawReport = {}
+          this._.forEach(this.auditInfo.report, (item) => {
+            if (item.description !== previousName && !rawReport[item.description]) {
+              rawReport[item.description] = {
+                name: item.description,
+                severity: item.severity,
+                instances: [item]
+              }
+            } else {
+              rawReport[item.description].instances.push(item)
+            }
+          })
+          this.sortedReport = this._.orderBy(rawReport, ['severity', 'name'], ['asc', 'asc'])
         }
       })
       .catch((err) => {
