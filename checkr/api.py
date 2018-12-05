@@ -112,29 +112,20 @@ class BadgeAPIView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request):
-        github_user = request.query_params.get('user')
-        github_repo = request.query_params.get('repo')
-        file_name = 'fund-me.svg'
+        if request.query_params.get('tracking'):
+            instance = get_object_or_404(GithubAudit, tracking=request.query_params.get('tracking'))
+            if instance:
+                file_name = 'passed.svg' if instance.result else 'failed.svg'
 
-        if github_user and github_repo:
-            repo_audits = Audit.objects.filter(
-                github_user=github_user, github_repo=github_repo
-            )
-            if repo_audits.exists():
-                if repo_audits.last().result:
-                    file_name = 'passed.svg'
-                else:
-                    file_name = 'failed.svg'
-
-            # Improve this implementation
-            badge_file = open(
-                '{}/images/{}'.format(settings.STATICFILES_DIRS[0], file_name),
-                'rb'
-            )
-            response = HttpResponse(content=badge_file)
-            response['Content-Type'] = 'image/svg+xml'
-            return response
+                # Improve this implementation
+                badge_file = open(
+                    '{}/images/{}'.format(settings.STATICFILES_DIRS[0], file_name),
+                    'rb'
+                )
+                response = HttpResponse(content=badge_file)
+                response['Content-Type'] = 'image/svg+xml'
+                return response
 
         return Response({
-            'details': 'Include GitHub username and repository in URL parameters'
+            'details': 'Include report tracking ID in URL parameters'
         }, status=status.HTTP_400_BAD_REQUEST)
