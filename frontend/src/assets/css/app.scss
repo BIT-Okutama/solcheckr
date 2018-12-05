@@ -69,3 +69,16 @@ button {
   background: #c3c3c3;
   margin: 10px 0;
 }
+
+a {
+  text-decoration: none !important;
+  color: #343a40;
+}
+
+.link-input {
+  border-radius: 5px;
+  padding: 0px 10px;
+  margin-right: 10px;
+  font-size: 12px;
+  width: 300px;
+}

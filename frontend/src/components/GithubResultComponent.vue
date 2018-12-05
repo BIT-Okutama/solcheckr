@@ -1,14 +1,27 @@
 <template>
   <div>
-    <div class="container">
+    <div class="w-100 px-5">
       <div class="row mt-5 mb-5">
+        <div class="col-sm-12 mb-5 d-flex justify-content-between align-items-center">
+          <div>
+          <h5>Security Report for</h5>
+          <h4 class="font-weight-bold"><i class="fab fa-github"></i> {{ auditInfo.repo }}</h4>
+          <small>Submitted: {{ (new Date(auditInfo.submitted)).toString() }}</small>
+          </div>
+          <div>
+            <span class="font-weight-bold">Share this report:</span><br/>
+            <span class="mb-5"><input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <i class="fas fa-copy"></i></span><br/>
+            <span class="font-weight-bold">GitHub badge (Markdown):</span><br/>
+            <span><input class="link-input" type="text" name="badgeMarkdown" id="badgeMarkdown" v-bind:value="badgeMarkdown"> <i class="fas fa-copy"></i></span><br/>
+          </div>
+        </div>
         <div class="col-sm-2 d-flex justify-content-center" style="height: 500px">
           <div class="text-center w-100">
           <b><i class="fas fa-file-code" style="font-size: 1.5em"></i></b><br/>
-          <b>Contracts</b>
+          <b>Solidity Files</b>
           <div class="divider"></div>
           <ul class="pl-0 text-center list-unstyled">
-            <li class="mb-2" v-for="(contract, name) in auditInfo.contracts" :key="name" v-on:click="switchContract(name)" v-bind:class="{ 'font-weight-bold bg-dark text-white rounded': name === openedContract }">{{ name }}</li>
+            <a v-for="(contract, name) in auditInfo.contracts" :key="name" v-on:click="switchContract(name)" href="javascript:void(0);"><li v-bind:class="{ 'font-weight-bold bg-dark text-white rounded': name === openedContract }" class="mb-2">{{ name }}</li></a>
           </ul>
           </div>
         </div>
@@ -20,10 +33,7 @@
     </div>
     <div v-if="!loading" class="row mt-5 mx-0 results-div text-white">
       <div class="container">
-        <div class="d-flex justify-content-between">
-          <h1 class="mt-4 mb-1"><b>Security Report</b></h1>
-          <span class="montserrat mt-4 mb-5"><b>Share this report:</b><br/>{{ pageLink }}</span>
-        </div>
+        <h1 class="mt-4 mb-1"><b>Security Report</b></h1>
         <div v-bind:class="[classMap[issue.severity]]" class="alert" role="alert" v-for="(issue, index) in auditInfo.report" :key="index">
           <p><b>{{ issue.description }}</b></p>
           <p v-if="issue.severity !== null">Severity: <b>{{ severityMap[issue.severity] }}</b></p>
@@ -46,6 +56,7 @@ export default {
   props: ['audit_data'],
   data () {
     return {
+      badgeMarkdown: '',
       openedContract: '',
       loading: true,
       classMap: ['alert-danger', 'alert-warning', 'alert-info', 'alert-dark'],
@@ -60,6 +71,7 @@ export default {
         this.loading = false
         if (response.data && response.data.id) {
           this.auditInfo = response.data
+          this.badgeMarkdown = `[![SolCheckr](https://solcheckr.localtunnel.me/api/badge?tracking=${this.auditInfo.tracking})](https://solcheckr.localtunnel.me/#/github-audit/${this.auditInfo.tracking})`
           this.openedContract = this._.keys(this.auditInfo.contracts).pop()
           let sortedReport = this._.orderBy(this.auditInfo.report, ['severity', 'vuln'], ['asc', 'asc'])
           // use sorted report for proper display
