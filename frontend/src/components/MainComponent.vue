@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="row mt-5 mb-5">
-    <div v-bind:class="[ isErrorsOpen && !loading ? 'col-sm-7' : 'col-sm-12']">
+    <div v-bind:class="[ (isErrorsOpen && !loading) || (loading && auditType === 'contract') ? 'col-sm-7' : 'col-sm-12']">
       <form v-on:submit.prevent="auditContract()">
         <div class="d-flex justify-content-between">
           <div class="mb-3">
@@ -10,7 +10,7 @@
             <button :disabled="loading" v-on:click="toggleAuditType()" v-if="auditType === 'repository'" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-code"></i> Code scan</button>
           </div>
         </div>
-        <editor v-if="auditType === 'contract' && !loading" v-model="newAudit.contract" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
+        <editor v-if="auditType === 'contract'" v-model="newAudit.contract" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
         <div v-if="auditType === 'repository' && !loading" class="row justify-content-center align-items-center text-center" style="height: 500px;">
           <div class="col-sm-8">
             <h1><i class="fab fa-github"></i></h1>
@@ -22,13 +22,15 @@
           </div>
         </div>
       </form>
-      <div v-if="loading === true" style="height: 500px" class="d-flex justify-content-center align-items-center"><div class="loader"></div></div>
+      <div v-if="loading === true && auditType === 'repository'" style="height: 500px" class="d-flex justify-content-center align-items-center"><div class="loader"></div></div>
     </div>
-    <div class="col-sm-5" v-if="isErrorsOpen">
+    <div class="col-sm-5" v-if="isErrorsOpen || (loading === true && auditType === 'contract')">
       <div class="errors-labels">
-        <h4>Errors</h4>
-        <small v-on:click="toggleErrors()"><a href="#">Close</a></small>
+        <h4 v-if="error !== null">Errors</h4>
+        <h4 v-on:click="toggleErrors()"><a href="#"><i class="far fa-window-close"></i></a></h4>
       </div>
+
+      <div v-if="loading === true && auditType === 'contract'" class="loader"></div>
 
       <div>
         <div class="alert alert-danger" role="alert" v-if="error !== null">

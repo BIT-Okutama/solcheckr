@@ -48,7 +48,9 @@
 
             <div v-bind:id="`collapse${index}`" v-bind:class="index === 0 ? 'show' : ''" class="collapse" v-bind:aria-labelledby="`heading${index}`" data-parent="#reportAccordion">
               <div class="card-body">
-                <li v-for="(instance, instance_index) in issue.instances" :key="instance_index">{{ instance.info }}</li>
+                <ul class="list-unstyled code">
+                  <li v-for="(instance, instance_index) in issue.instances" :key="instance_index" v-bind:class="[`list-pre${instance.severity}`]"><span class="red-box"></span> {{ instance.info }}</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -102,7 +104,6 @@ export default {
         }
       })
       .catch((err) => {
-        console.log(err, 'error!')
         this.loading = false
         if (err.response.data && err.response.data.error) {
           this.error = err.response.data

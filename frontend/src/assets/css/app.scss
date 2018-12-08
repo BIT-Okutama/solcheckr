@@ -51,6 +51,7 @@ textarea.form-control {
 
 .code {
   font-family: monospace !important;
+  white-space: pre-wrap;
 }
 
 .results-div {
@@ -81,4 +82,27 @@ a {
   margin-right: 10px;
   font-size: 12px;
   width: 300px;
+}
+
+.list-pre0:before {
+  background: #dd3d45;
+  width: 10px;
+  height: 10px;
+  content: " ";
+  display: unset;
+}
+
+.list-pre1:before {
+  @extend .list-pre0:before;
+  background: #ffc107;
+}
+
+.list-pre2:before {
+  @extend .list-pre0:before;
+  background: #17a2b8;
+}
+
+.list-pre3:before {
+  @extend .list-pre0:before;
+  background: #343a3f;
 }
