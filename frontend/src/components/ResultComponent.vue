@@ -10,7 +10,7 @@
           </div>
           <div>
             <span class="font-weight-bold">Share this report:</span><br/>
-            <span class="mb-5"><input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <i class="fas fa-copy"></i></span>
+            <span class="mb-5"><input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <a href="javascript:void(0);"><i v-on:click="copyLink()" class="fas fa-copy"></i></a></span>
           </div>
         </div>
         <div class="col-sm-12 d-flex justify-content-center">
@@ -99,6 +99,11 @@ export default {
       require('brace/ext/language_tools')
       require('brace/theme/mono_industrial')
       require('../assets/js/solidity.js')
+    },
+    copyLink () {
+      var copyText = document.getElementById('pageLink')
+      copyText.select()
+      document.execCommand('copy')
     }
   },
   components: {

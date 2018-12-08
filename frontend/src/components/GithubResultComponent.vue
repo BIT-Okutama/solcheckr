@@ -10,9 +10,9 @@
           </div>
           <div>
             <span class="font-weight-bold">Share this report:</span><br/>
-            <span class="mb-5"><input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <i class="fas fa-copy"></i></span><br/>
+            <span class="mb-5"><input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <i v-on:click="copyLink('pageLink')" class="fas fa-copy"></i></span><br/>
             <span class="font-weight-bold">GitHub badge (Markdown):</span><br/>
-            <span><input class="link-input" type="text" name="badgeMarkdown" id="badgeMarkdown" v-bind:value="badgeMarkdown"> <i class="fas fa-copy"></i></span><br/>
+            <span><input class="link-input" type="text" name="badgeMarkdown" id="badgeMarkdown" v-bind:value="badgeMarkdown"> <a href="javascript:void(0);"><i v-on:click="copyLink('badgeMarkdown')" class="fas fa-copy"></i></a></span><br/>
           </div>
         </div>
         <div class="col-sm-2 d-flex justify-content-center" style="height: 500px">
@@ -118,6 +118,11 @@ export default {
     },
     switchContract (name) {
       this.openedContract = name
+    },
+    copyLink (copyId) {
+      var copyText = document.getElementById(copyId)
+      copyText.select()
+      document.execCommand('copy')
     }
   },
   components: {
