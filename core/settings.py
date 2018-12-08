@@ -60,6 +60,10 @@ CORS_ORIGIN_WHITELIST = (
     'localhost:8080',
 )
 
+REST_FRAMEWORK = {
+    'DATETIME_FORMAT': "%B %d, %Y - %H:%M %p (%Z)",
+}
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

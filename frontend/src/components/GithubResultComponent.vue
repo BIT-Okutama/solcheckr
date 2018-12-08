@@ -6,7 +6,7 @@
           <div>
           <h5>Security Report for</h5>
           <h4 class="font-weight-bold"><i class="fab fa-github"></i> {{ auditInfo.repo }}</h4>
-          <small>Submitted: {{ (new Date(auditInfo.submitted)).toString() }}</small>
+          <small>{{ auditInfo.submitted }}</small>
           </div>
           <div>
             <span class="font-weight-bold">Share this report:</span><br/>
