@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import MainComponent from '@/components/MainComponent'
 import ResultComponent from '@/components/ResultComponent'
 import GithubResultComponent from '@/components/GithubResultComponent'
+import ZipResultComponent from '@/components/ZipResultComponent'
 
 Vue.use(Router)
 
@@ -22,6 +23,11 @@ export default new Router({
       path: '/github-audit/:auditTracker',
       name: 'GithubResultComponent',
       component: GithubResultComponent
+    },
+    {
+      path: '/zip-audit/:auditTracker',
+      name: 'ZipResultComponent',
+      component: ZipResultComponent
     }
   ]
 })
