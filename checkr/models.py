@@ -13,18 +13,24 @@ class TrackingMixin(object):
         super().save(*args, **kwargs)
 
 
-class Audit(TrackingMixin, models.Model):
-    contract = models.TextField()
+class BaseAuditModel(models.Model):
     report = models.TextField(blank=True, default='')
     result = models.NullBooleanField()
     submitted = models.DateTimeField(auto_now=True)
     tracking = models.CharField(max_length=100, null=True, blank=True)
 
+    class Meta:
+        abstract = True
 
-class GithubAudit(TrackingMixin, models.Model):
+
+class Audit(TrackingMixin, BaseAuditModel):
+    contract = models.TextField()
+
+
+class GithubAudit(TrackingMixin, BaseAuditModel):
     repo = models.CharField(max_length=200)
     contracts = models.TextField(blank=True, default='')
-    report = models.TextField(blank=True, default='')
-    result = models.NullBooleanField()
-    submitted = models.DateTimeField(auto_now=True)
-    tracking = models.CharField(max_length=100, null=True, blank=True)
+
+
+class ZipAudit(TrackingMixin, BaseAuditModel):
+    contracts = models.TextField(blank=True, default='')
