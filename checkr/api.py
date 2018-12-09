@@ -8,12 +8,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
 from rest_framework.generics import CreateAPIView, GenericAPIView
 from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from checkr.models import Audit, GithubAudit
-from checkr.serializers import AuditSerializer, GithubAuditSerializer
-from checkr.utils import analyze_contract, analyze_repository
+from checkr.models import Audit, GithubAudit, ZipAudit
+from checkr.serializers import AuditSerializer, GithubAuditSerializer, ZipAuditSerializer
+from checkr.utils import analyze_contract, analyze_repository, analyze_zip
 
 
 class CheckrAPIView(CreateAPIView):
@@ -129,3 +130,36 @@ class BadgeAPIView(APIView):
         return Response({
             'details': 'Include report tracking ID in URL parameters'
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ZipCheckrAPIView(GenericAPIView):
+    lookup_field = 'tracking'
+    lookup_url_kwarg = 'tracking'
+    queryset = ZipAudit.objects
+    serializer_class = ZipAuditSerializer
+    permission_classes = (permissions.AllowAny,)
+    parser_classes = (MultiPartParser,)
+
+    def get(self, request, *args, **kwargs):
+        instance = get_object_or_404(self.queryset, tracking=self.kwargs.get('tracking'))
+        serializer = self.get_serializer(instance)
+        response = serializer.data
+        if response.get('report'):
+            response.update({'report': ast.literal_eval(response.get('report'))})
+            response.update({'contracts': ast.literal_eval(response.get('contracts'))})
+        return Response(response)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            file_obj = request.data.get('file')
+            audit_report = analyze_zip(file_obj)
+        except Exception as e:
+            return Response(
+                {'details': 'Something wrong happened, please try again'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if audit_report.get('success'):
+            return Response(audit_report, status=status.HTTP_201_CREATED)
+
+        return Response(audit_report, status=status.HTTP_400_BAD_REQUEST)

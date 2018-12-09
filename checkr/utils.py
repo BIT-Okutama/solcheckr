@@ -3,11 +3,12 @@ import json
 import os
 import shutil
 import subprocess
+import zipfile
 
 import requests
 from django.conf import settings
 
-from checkr.models import GithubAudit
+from checkr.models import GithubAudit, ZipAudit
 
 # Constant strings
 CONTRACT_FILENAME = 'contract.sol'
@@ -24,10 +25,10 @@ def analyze_contract(contract):
 
         # use Slither through subprocess
         terminal_audit = subprocess.run(
-            ["slither", CONTRACT_FILENAME, "--json", REPORT_FILENAME],
+            ['slither', CONTRACT_FILENAME, '--json', REPORT_FILENAME],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
-        audit_report = terminal_audit.stdout.decode("utf-8").strip()
+        audit_report = terminal_audit.stdout.decode('utf-8').strip()
 
         if os.path.exists(CONTRACT_FILENAME):
             os.remove(CONTRACT_FILENAME)
@@ -155,7 +156,7 @@ def analyze_repository(repository=None):
             ['slither', save_path, '--json', REPORT_FILENAME],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
-        audit_report = terminal_audit.stdout.decode("utf-8").strip()
+        audit_report = terminal_audit.stdout.decode('utf-8').strip()
 
         json_report = ''
         if os.path.exists(REPORT_FILENAME):
@@ -207,6 +208,91 @@ def analyze_repository(repository=None):
             'contracts': all_contracts,
             'tracking': github_audit_instance.tracking,
             'repo': repository,
+            'issues': json_report
+        }
+
+    return None
+
+
+def analyze_zip(file=None):
+    if file:
+        extracted_dir = 'extracted'
+        zip_dir = 'zipcontracts'
+        zip_report = 'zipreport.json'
+
+        if not os.path.exists(zip_dir):
+            os.mkdir(zip_dir)
+
+        if not os.path.exists(extracted_dir):
+            os.mkdir(extracted_dir)
+
+        all_contracts = {}
+        shutil.move(file.temporary_file_path(), os.path.join(zip_dir, file.name))
+        with zipfile.ZipFile(os.path.join(zip_dir, file.name), 'r') as zip_ref:
+            zip_ref.extractall(extracted_dir)
+
+        for root, dirs, files in os.walk(extracted_dir):
+            for name in files:
+                if os.path.splitext(name)[1] == '.sol':
+                    with open(os.path.join(root, name), 'r') as f:
+                        all_contracts[name] = f.read()
+                    shutil.move(os.path.join(root, name), zip_dir)
+
+        terminal_audit = subprocess.run(
+            ['slither', zip_dir, '--json', zip_report],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+        audit_report = terminal_audit.stdout.decode('utf-8').strip()
+        zip_audit_instance = ZipAudit(contracts=json.dumps(all_contracts))
+
+        json_report = ''
+        if os.path.exists(zip_report):
+            with open(zip_report, 'r') as f:
+                zip_audit_instance.report = f.read()
+                json_report = ast.literal_eval(zip_audit_instance.report)
+            os.remove(zip_report)
+
+        passed_test = True  # passed or failed test
+        for issue in json_report:
+            if issue.get('severity') < 3:
+                passed_test = False
+                break
+
+        zip_audit_instance.result = passed_test
+        zip_audit_instance.save()
+
+        # clean saved files
+        shutil.rmtree(zip_dir, ignore_errors=True)
+        shutil.rmtree(extracted_dir, ignore_errors=True)
+
+        if 'Compilation warnings/errors' in audit_report:
+            # TODO!!!
+            # temporary bad way of parsing error into something like
+            # '8:21: Error: Expected primary expression.'
+            # b = audit_report[audit_report.find(CONTRACT_FILENAME) +
+            #                  1:audit_report.rfind('\n\nINFO')]
+            # broken_string = b[b.find(CONTRACT_FILENAME):]
+
+            # separated_list = broken_string.split(':')
+            # error_desc = ' '.join([x.strip() for x in separated_list[4:]])
+            return True
+            # return {
+            #     'success': False,
+            #     'error': True,
+            #     'filename': CONTRACT_FILENAME,
+            #     'lineno': int(separated_list[1]),
+            #     'character': int(separated_list[2]),
+            #     'details': error_desc[:error_desc.index('\x1b[0m\n')].strip(),
+            #     'code': error_desc[error_desc.index('\x1b[0m\n') +
+            #                        len('\x1b[0m\n'):]
+            # }
+
+        return {
+            'success': True,
+            'error': False,
+            'audit_type': 'zip',
+            'contracts': all_contracts,
+            'tracking': zip_audit_instance.tracking,
             'issues': json_report
         }
 
