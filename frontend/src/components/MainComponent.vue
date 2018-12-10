@@ -19,7 +19,7 @@
             <h1><i class="fab fa-github"></i></h1>
             <div class="form-group">
               <label for="repository_url">GitHub repository</label>
-              <input type="text" v-model="repoUrl" class="form-control" id="repository_url" aria-describedby="repository_url_help" placeholder="ex. https://github.com/githubusername/helloworld.git">
+              <input type="text" v-model="repoUrl" class="form-control field-input px-3" id="repository_url" aria-describedby="repository_url_help" placeholder="ex. https://github.com/githubusername/helloworld.git">
               <small id="repository_url_help" class="form-text text-muted">Make sure the repository is public. HTTPS and SSH is supported.<br/>Experimental feature, a lot of things to improve :)</small>
             </div>
           </div>
@@ -29,7 +29,7 @@
             <h1><i class="fas fa-file-archive"></i></h1>
             <div class="form-group">
               <label for="repository_url">Upload ZIP</label><br/>
-              <input type="file" id="file" ref="file" accept="application/zip" v-on:change="handleFileUpload()"/>
+              <input class="field-input" type="file" id="file" ref="file" accept="application/zip" v-on:change="handleFileUpload()"/>
               <small id="repository_url_help" class="form-text text-muted">Please upload your project .zip file. The Solidity files will be extracted and checked<br/>Experimental feature, a lot of things to improve :)</small>
             </div>
           </div>
