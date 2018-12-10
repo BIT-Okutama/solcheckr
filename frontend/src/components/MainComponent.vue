@@ -32,6 +32,9 @@
             <h1><i class="fas fa-file-archive"></i></h1>
             <div class="form-group">
               <label for="repository_url">Upload ZIP</label><br/>
+              <div v-if="zipError" class="alert alert-danger" role="alert">
+                {{ zipError }}
+              </div>
               <input class="field-input" type="file" id="file" ref="file" accept="application/zip" v-on:change="handleFileUpload()"/>
               <small id="repository_url_help" class="form-text text-muted">Please upload your project .zip file. The Solidity files will be extracted and checked<br/>Experimental feature, a lot of things to improve :)</small>
             </div>
@@ -73,6 +76,7 @@ export default {
       file: '',
       validFile: false,
       repoErr: null,
+      zipError: null,
       isErrorsOpen: false,
       auditType: 'contract',
       loading: false,
@@ -134,7 +138,6 @@ contract SampleReentrancy {
             this.highlightError()
           })
       } else if (this.auditType === 'repository') {
-        // var re = new RegExp('/^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/(.+).git$/')
         var re = /(?:git|ssh|https?|git@[-\w.]+):(\/\/)?(.*?)(\.git)$/
         if (!re.test(this.repoUrl)) {
           this.repoErr = 'The provided GitHub URL is invalid'
@@ -201,9 +204,11 @@ contract SampleReentrancy {
     handleFileUpload () {
       if (this.$refs.file.files[0] && this.$refs.file.files[0].type === 'application/zip') {
         this.file = this.$refs.file.files[0]
+        this.zipError = null
         this.validFile = true
       } else {
         this.file = null
+        this.zipError = 'The uploaded file does not have a .zip extension'
         this.validFile = false
       }
     }
