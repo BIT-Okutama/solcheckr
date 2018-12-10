@@ -64,7 +64,7 @@ export default {
     }
   },
   mounted () {
-    axios.get(`http://localhost:8000/api/audit/${this.$route.params.auditTracker}`)
+    axios.get(`${process.env.ROOT_API}/audit/${this.$route.params.auditTracker}`)
       .then((response) => {
         this.loading = false
         if (response.data && response.data.id) {

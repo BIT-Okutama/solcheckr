@@ -13,7 +13,7 @@
             <span class="mb-5"><input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <i v-on:click="copyLink('pageLink')" class="fas fa-copy"></i></span>
           </div>
         </div>
-        <div class="col-sm-2 d-flex justify-content-center" style="height: 500px">
+        <div class="col-sm-2 d-flex justify-content-center border-right-0 rounded-left px-3 py-4" style="height: 500px;border: 2px solid #1d2621;">
           <div class="text-center w-100">
           <b><i class="fas fa-file-code" style="font-size: 1.5em"></i></b><br/>
           <b>Solidity Files</b>
@@ -23,7 +23,7 @@
           </ul>
           </div>
         </div>
-        <div class="col-sm-10 d-flex justify-content-center">
+        <div class="col-sm-10 d-flex justify-content-center px-0">
           <div class="loader" v-if="loading === true"></div>
           <editor v-if="!loading" v-model="auditInfo.contracts[openedContract]" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
         </div>
@@ -76,7 +76,7 @@ export default {
     }
   },
   mounted () {
-    axios.get(`http://localhost:8000/api/zip-audit/${this.$route.params.auditTracker}`)
+    axios.get(`${process.env.ROOT_API}/zip-audit/${this.$route.params.auditTracker}`)
       .then((response) => {
         this.loading = false
         if (response.data && response.data.id) {

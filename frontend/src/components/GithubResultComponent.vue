@@ -15,7 +15,7 @@
             <span><input class="link-input" type="text" name="badgeMarkdown" id="badgeMarkdown" v-bind:value="badgeMarkdown"> <a href="javascript:void(0);"><i v-on:click="copyLink('badgeMarkdown')" class="fas fa-copy"></i></a></span><br/>
           </div>
         </div>
-        <div class="col-sm-2 d-flex justify-content-center" style="height: 500px">
+        <div class="col-sm-2 d-flex justify-content-center border-right-0 rounded-left px-3 py-4" style="height: 500px; border: 2px solid #1d2621;">
           <div class="text-center w-100">
           <b><i class="fas fa-file-code" style="font-size: 1.5em"></i></b><br/>
           <b>Solidity Files</b>
@@ -25,7 +25,7 @@
           </ul>
           </div>
         </div>
-        <div class="col-sm-10 d-flex justify-content-center">
+        <div class="col-sm-10 d-flex justify-content-center px-0">
           <div class="loader" v-if="loading === true"></div>
           <editor v-if="!loading" v-model="auditInfo.contracts[openedContract]" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
         </div>
@@ -79,12 +79,12 @@ export default {
     }
   },
   mounted () {
-    axios.get(`http://localhost:8000/api/github-audit/${this.$route.params.auditTracker}`)
+    axios.get(`${process.env.ROOT_API}/github-audit/${this.$route.params.auditTracker}`)
       .then((response) => {
         this.loading = false
         if (response.data && response.data.id) {
           this.auditInfo = response.data
-          this.badgeMarkdown = `[![SolCheckr](https://solcheckr.localtunnel.me/api/badge?tracking=${this.auditInfo.tracking})](https://solcheckr.localtunnel.me/#/github-audit/${this.auditInfo.tracking})`
+          this.badgeMarkdown = `[![SolCheckr](${process.env.ROOT_API}/badge?tracking=${this.auditInfo.tracking})](${process.env.ROOT_PROJECT}/#/github-audit/${this.auditInfo.tracking})`
           this.openedContract = this._.keys(this.auditInfo.contracts)[0]
 
           let previousName = ''

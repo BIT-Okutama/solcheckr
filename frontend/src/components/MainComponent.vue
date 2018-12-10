@@ -4,7 +4,7 @@
     <div class="col-sm-12">
       <div class="d-flex justify-content-between">
         <div class="mb-3">
-          <button :disabled="loading || (auditType === 'contract' && newAudit.contract.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && (!validFile || !file))" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat px-5" v-on:click="auditContract()">Submit</button>
+          <button :disabled="loading || (auditType === 'contract' && newAudit.contract.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && !validFile)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat px-5" v-on:click="auditContract()">Submit</button>
           <button :disabled="loading || auditType === 'contract'" v-on:click="toggleAuditType('contract')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-code"></i> Code scan</button>
           <button :disabled="loading || auditType === 'repository'" v-on:click="toggleAuditType('repository')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fab fa-github"></i> GitHub scan</button>
           <button :disabled="loading || auditType === 'zip'" v-on:click="toggleAuditType('zip')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-file-archive"></i> Upload ZIP</button>
@@ -19,6 +19,9 @@
             <h1><i class="fab fa-github"></i></h1>
             <div class="form-group">
               <label for="repository_url">GitHub repository</label>
+              <div v-if="repoErr" class="alert alert-danger" role="alert">
+                {{ repoErr }}
+              </div>
               <input type="text" v-model="repoUrl" class="form-control field-input px-3" id="repository_url" aria-describedby="repository_url_help" placeholder="ex. https://github.com/githubusername/helloworld.git">
               <small id="repository_url_help" class="form-text text-muted">Make sure the repository is public. HTTPS and SSH is supported.<br/>Experimental feature, a lot of things to improve :)</small>
             </div>
@@ -69,6 +72,7 @@ export default {
     return {
       file: '',
       validFile: false,
+      repoErr: null,
       isErrorsOpen: false,
       auditType: 'contract',
       loading: false,
@@ -112,7 +116,7 @@ contract SampleReentrancy {
       this.error = null
 
       if (this.auditType === 'contract') {
-        axios.post('http://localhost:8000/api/audit/', this.newAudit)
+        axios.post(`${process.env.ROOT_API}/audit/`, this.newAudit)
           .then((response) => {
             this.loading = false
             if (response.data && response.data.success) {
@@ -130,7 +134,16 @@ contract SampleReentrancy {
             this.highlightError()
           })
       } else if (this.auditType === 'repository') {
-        axios.post('http://localhost:8000/api/github-audit/', {repository_url: this.repoUrl})
+        // var re = new RegExp('/^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/(.+).git$/')
+        var re = /(?:git|ssh|https?|git@[-\w.]+):(\/\/)?(.*?)(\.git)$/
+        if (!re.test(this.repoUrl)) {
+          this.repoErr = 'The provided GitHub URL is invalid'
+          this.loading = false
+          return
+        }
+
+        this.repoErr = null
+        axios.post(`${process.env.ROOT_API}/github-audit/`, {repository_url: this.repoUrl})
           .then((response) => {
             this.loading = false
             if (response.data && response.data.success) {
@@ -148,7 +161,7 @@ contract SampleReentrancy {
         let formData = new FormData()
         formData.append('file', this.file)
 
-        axios.post('http://localhost:8000/api/zip-audit/', formData, {headers: {'Content-Type': 'multipart/form-data'}})
+        axios.post(`${process.env.ROOT_API}/zip-audit/`, formData, {headers: {'Content-Type': 'multipart/form-data'}})
           .then((response) => {
             this.loading = false
             if (response.data && response.data.success) {
@@ -188,6 +201,7 @@ contract SampleReentrancy {
     handleFileUpload () {
       if (this.$refs.file.files[0] && this.$refs.file.files[0].type === 'application/zip') {
         this.file = this.$refs.file.files[0]
+        this.validFile = true
       } else {
         this.file = null
         this.validFile = false
