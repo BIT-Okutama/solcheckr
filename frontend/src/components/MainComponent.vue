@@ -1,16 +1,18 @@
 <template>
   <div class="container">
     <div class="row mt-5 mb-5">
+    <div class="col-sm-12">
+      <div class="d-flex justify-content-between">
+        <div class="mb-3">
+          <button :disabled="loading || (auditType === 'contract' && newAudit.contract.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && (!validFile || !file))" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat px-5" v-on:click="auditContract()">Submit</button>
+          <button :disabled="loading || auditType === 'contract'" v-on:click="toggleAuditType('contract')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-code"></i> Code scan</button>
+          <button :disabled="loading || auditType === 'repository'" v-on:click="toggleAuditType('repository')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fab fa-github"></i> GitHub scan</button>
+          <button :disabled="loading || auditType === 'zip'" v-on:click="toggleAuditType('zip')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-file-archive"></i> Upload ZIP</button>
+        </div>
+      </div>
+    </div>
     <div v-bind:class="[ (isErrorsOpen && !loading) || (loading && auditType === 'contract') ? 'col-sm-7' : 'col-sm-12']">
       <form v-on:submit.prevent="auditContract()">
-        <div class="d-flex justify-content-between">
-          <div class="mb-3">
-            <button :disabled="loading || (auditType === 'contract' && newAudit.contract.trim().length < 25) || (auditType === 'repository' && !repoUrl)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat px-5">Submit</button>
-            <button :disabled="loading || auditType === 'contract'" v-on:click="toggleAuditType('contract')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-code"></i> Code scan</button>
-            <button :disabled="loading || auditType === 'repository'" v-on:click="toggleAuditType('repository')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fab fa-github"></i> GitHub scan</button>
-            <button :disabled="loading || auditType === 'zip'" v-on:click="toggleAuditType('zip')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-file-archive"></i> Upload ZIP</button>
-          </div>
-        </div>
         <editor v-if="auditType === 'contract'" v-model="newAudit.contract" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
         <div v-if="auditType === 'repository' && !loading" class="row justify-content-center align-items-center text-center" style="height: 500px;">
           <div class="col-sm-8">
@@ -22,12 +24,22 @@
             </div>
           </div>
         </div>
+        <div v-if="auditType === 'zip' && !loading" class="row justify-content-center align-items-center text-center" style="height: 500px;">
+          <div class="col-sm-8">
+            <h1><i class="fas fa-file-archive"></i></h1>
+            <div class="form-group">
+              <label for="repository_url">Upload ZIP</label><br/>
+              <input type="file" id="file" ref="file" accept="application/zip" v-on:change="handleFileUpload()"/>
+              <small id="repository_url_help" class="form-text text-muted">Please upload your project .zip file. The Solidity files will be extracted and checked<br/>Experimental feature, a lot of things to improve :)</small>
+            </div>
+          </div>
+        </div>
       </form>
-      <div v-if="loading === true && auditType === 'repository'" style="height: 500px" class="d-flex justify-content-center align-items-center"><div class="loader"></div></div>
+      <div v-if="loading === true && auditType !== 'contract'" style="height: 500px" class="d-flex justify-content-center align-items-center"><div class="loader"></div></div>
     </div>
     <div class="col-sm-5" v-if="isErrorsOpen || (loading === true && auditType === 'contract')">
       <div class="errors-labels">
-        <h4 v-if="error !== null">Errors</h4>
+        <h4 v-if="error !== null"> </h4>
         <h4 v-on:click="toggleErrors()"><a href="#"><i class="far fa-window-close"></i></a></h4>
       </div>
 
@@ -45,15 +57,6 @@
       </div>
     </div>
     </div>
-
-    <div class="container">
-      <div class="large-12 medium-12 small-12 cell">
-        <label>File
-          <input type="file" id="file" ref="file" v-on:change="handleFileUpload()"/>
-        </label>
-          <button v-on:click="auditContract()">Submit</button>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -65,6 +68,7 @@ export default {
   data () {
     return {
       file: '',
+      validFile: false,
       isErrorsOpen: false,
       auditType: 'contract',
       loading: false,
@@ -182,7 +186,12 @@ contract SampleReentrancy {
       this.auditType = newType
     },
     handleFileUpload () {
-      this.file = this.$refs.file.files[0]
+      if (this.$refs.file.files[0] && this.$refs.file.files[0].type === 'application/zip') {
+        this.file = this.$refs.file.files[0]
+      } else {
+        this.file = null
+        this.validFile = false
+      }
     }
   },
   components: {
