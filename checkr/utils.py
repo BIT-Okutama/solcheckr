@@ -15,6 +15,12 @@ CONTRACT_FILENAME = 'contract.sol'
 REPORT_FILENAME = 'report.json'
 
 
+def clean_duplicates(report_dict):
+    if report_dict:
+        return list({x['info']:x for x in report_dict}.values())
+    return dict()
+
+
 def analyze_contract(contract):
     """Analyze a single contract."""
     if contract:
@@ -36,7 +42,7 @@ def analyze_contract(contract):
         json_report = ''
         if os.path.exists(REPORT_FILENAME):
             with open(REPORT_FILENAME, 'r') as f:
-                json_report = ast.literal_eval(f.read())
+                json_report = clean_duplicates(ast.literal_eval(f.read()))
             os.remove(REPORT_FILENAME)
 
         if 'Compilation warnings/errors' in audit_report:
@@ -161,8 +167,8 @@ def analyze_repository(repository=None):
         json_report = ''
         if os.path.exists(REPORT_FILENAME):
             with open(REPORT_FILENAME, 'r') as f:
-                github_audit_instance.report = f.read()
-                json_report = ast.literal_eval(github_audit_instance.report)
+                json_report = clean_duplicates(ast.literal_eval(f.read()))
+                github_audit_instance.report = json_report
             os.remove(REPORT_FILENAME)
 
         passed_test = True  # passed or failed test
@@ -248,8 +254,8 @@ def analyze_zip(file=None):
         json_report = ''
         if os.path.exists(zip_report):
             with open(zip_report, 'r') as f:
-                zip_audit_instance.report = f.read()
-                json_report = ast.literal_eval(zip_audit_instance.report)
+                json_report = clean_duplicates(ast.literal_eval(f.read()))
+                zip_audit_instance.report = json_report
             os.remove(zip_report)
 
         passed_test = True  # passed or failed test
