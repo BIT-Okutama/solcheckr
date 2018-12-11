@@ -152,7 +152,13 @@ class ZipCheckrAPIView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         try:
             file_obj = request.data.get('file')
-            audit_report = analyze_zip(file_obj)
+            if file_obj:
+                if file_obj.size > 30000000:
+                    return Response(
+                        {'details': 'File exceeds size limit of 30 MB'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                audit_report = analyze_zip(file_obj)
         except Exception as e:
             return Response(
                 {'details': 'Something wrong happened, please try again'},

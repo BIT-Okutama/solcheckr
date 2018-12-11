@@ -36,7 +36,7 @@
                 {{ zipError }}
               </div>
               <input class="field-input" type="file" id="file" ref="file" accept="application/zip" v-on:change="handleFileUpload()"/>
-              <small id="repository_url_help" class="form-text text-muted">Please upload your project .zip file. The Solidity files will be extracted and checked<br/>Experimental feature, a lot of things to improve :)</small>
+              <small id="repository_url_help" class="form-text text-muted">Please upload your project .zip file. The Solidity files will be extracted and checked (Max size: 30 MB)<br/>Experimental feature, a lot of things to improve :)</small>
             </div>
           </div>
         </div>
@@ -212,13 +212,13 @@ contract SampleReentrancy {
       this.auditType = newType
     },
     handleFileUpload () {
-      if (this.$refs.file.files[0] && this.$refs.file.files[0].type === 'application/zip') {
+      if (this.$refs.file.files[0] && this.$refs.file.files[0].type === 'application/zip' && this.$refs.file.files[0].size <= 30000000) {
         this.file = this.$refs.file.files[0]
         this.zipError = null
         this.validFile = true
       } else {
         this.file = null
-        this.zipError = 'The uploaded file does not have a .zip extension'
+        this.zipError = 'The uploaded file is not a ZIP file or exceeds the limit of 30 MB'
         this.validFile = false
       }
     },
