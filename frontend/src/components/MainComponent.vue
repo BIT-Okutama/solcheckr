@@ -138,26 +138,36 @@ contract SampleReentrancy {
             this.highlightError()
           })
       } else if (this.auditType === 'repository') {
-        var re = /(?:git|ssh|https?|git@[-\w.]+):(\/\/)?(.*?)(\.git)$/
+        let re = /(?:git|ssh|https?|git@[-\w.]+):(\/\/)?(.*?)(\.git)$/
         if (!re.test(this.repoUrl)) {
           this.repoErr = 'The provided GitHub URL is invalid'
           this.loading = false
           return
         }
 
-        this.repoErr = null
-        axios.post(`${process.env.ROOT_API}/github-audit/`, {repository_url: this.repoUrl})
-          .then((response) => {
-            this.loading = false
-            if (response.data && response.data.success) {
-              this.$router.push({ path: `/github-audit/${response.data.tracking}` })
-            }
-          })
-          .catch((err) => {
-            this.loading = false
-            if (err.response.data && err.response.data.error) {
-              this.isErrorsOpen = true
-              this.error = err.response.data
+        let reMatch = re.exec(this.repoUrl)
+        let repoName = reMatch[2].substring(reMatch[2].indexOf('/') + 1, reMatch[2].length)
+        this.getRepoSolidityCount(repoName)
+          .then((solFileCount) => {
+            if (solFileCount <= 0) {
+              this.repoErr = 'Repository may be invalid or does not contain any Solidity file'
+              this.loading = false
+            } else {
+              this.repoErr = null
+              axios.post(`${process.env.ROOT_API}/github-audit/`, {repository_url: this.repoUrl})
+                .then((response) => {
+                  this.loading = false
+                  if (response.data && response.data.success) {
+                    this.$router.push({ path: `/github-audit/${response.data.tracking}` })
+                  }
+                })
+                .catch((err) => {
+                  this.loading = false
+                  if (err.response.data && err.response.data.error) {
+                    this.isErrorsOpen = true
+                    this.error = err.response.data
+                  }
+                })
             }
           })
       } else {
@@ -211,6 +221,18 @@ contract SampleReentrancy {
         this.zipError = 'The uploaded file does not have a .zip extension'
         this.validFile = false
       }
+    },
+    getRepoSolidityCount (repo) {
+      return axios.get(`https://api.github.com/search/code?q=extension:sol+repo:${repo}`)
+        .then((response) => {
+          if (response.data && response.data.total_count !== null) {
+            return response.data.total_count
+          }
+        })
+        .catch((err) => {
+          console.log(err, 'Error')
+          return -1
+        })
     }
   },
   components: {
