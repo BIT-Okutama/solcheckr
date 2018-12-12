@@ -15,6 +15,12 @@
             <span><input class="link-input" type="text" name="badgeMarkdown" id="badgeMarkdown" v-bind:value="badgeMarkdown"> <a href="javascript:void(0);"><i v-on:click="copyLink('badgeMarkdown')" class="fas fa-copy"></i></a></span><br/>
           </div>
         </div>
+        <div class="col-sm-12 mb-2 text-center font-weight-bold">
+          <div v-if="auditInfo.result" class="alert alert-success">
+            <span v-if="!auditInfo.report.length">Awesome! We give your code a 10 out of 10!</span>
+            <span v-if="auditInfo.report && auditInfo.report.length > 0">Nice! No vulnerabilities were found, but we've provided you with what parts you can improve!</span>
+          </div>
+        </div>
         <div class="col-sm-2 d-flex justify-content-center border-right-0 rounded-left px-3 py-4" style="height: 500px; border: 2px solid #1d2621;">
           <div class="text-center w-100">
           <b><i class="fas fa-file-code" style="font-size: 1.5em"></i></b><br/>
@@ -35,7 +41,6 @@
     <div v-if="!loading" class="row mt-5 pb-5 mx-0 results-div text-white">
       <div class="container">
         <h2 class="mt-4 mb-1"><b><i class="fas fa-shield-alt"></i> Vulnerability Details</b></h2>
-        <span class="montserrat">Please click a vulnerability to view detailed information about it. </span>
         <div class="accordion text-dark mt-5" id="reportAccordion">
           <div v-for="(issue, index) in sortedReport" :key="index" class="card">
             <div class="card-header pl-1 font-weight-bold" v-bind:id="`heading${index}`">
