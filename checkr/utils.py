@@ -60,6 +60,9 @@ def analyze_contract(contract):
                     item_detail = audit_report[item[1]:err_indeces[i + 1][0]].strip()
 
                 broken_string = audit_report[item[0]:item[1]].split(':')
+                if broken_string[3].strip() == 'Error':
+                    has_error = True
+
                 err_list.append({
                     'line': broken_string[1],
                     'character': broken_string[2],
