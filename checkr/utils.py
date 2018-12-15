@@ -210,6 +210,7 @@ def analyze_repository(repository=None):
                 })
 
             if has_error:
+                shutil.rmtree(save_path, ignore_errors=True)
                 return {
                     'success': not has_error,
                     'error': has_error,
@@ -228,8 +229,7 @@ def analyze_repository(repository=None):
         github_audit_instance.save()
 
         # clean saved files
-        if os.path.exists(save_path):
-            shutil.rmtree(save_path, ignore_errors=True)
+        shutil.rmtree(save_path, ignore_errors=True)
 
         return {
             'success': True,
@@ -303,6 +303,9 @@ def analyze_zip(file=None):
                 })
 
             if has_error:
+                shutil.rmtree(zip_dir, ignore_errors=True)
+                shutil.rmtree(extracted_dir, ignore_errors=True)
+
                 return {
                     'success': not has_error,
                     'error': has_error,
