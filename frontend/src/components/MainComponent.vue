@@ -4,7 +4,7 @@
     <div class="col-sm-12">
       <div class="d-flex justify-content-between">
         <div class="mb-3">
-          <button :disabled="loading || (auditType === 'contract' && newAudit.contract.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && !validFile)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat px-5" v-on:click="auditContract()">Submit</button>
+          <button :disabled="loading || (auditType === 'contract' && auditCode.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && !validFile)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat px-5" v-on:click="auditContract()">Submit</button>
           <button :disabled="loading || auditType === 'contract'" v-on:click="toggleAuditType('contract')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-code"></i> Code scan</button>
           <button :disabled="loading || auditType === 'repository'" v-on:click="toggleAuditType('repository')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fab fa-github"></i> GitHub scan</button>
           <button :disabled="loading || auditType === 'zip'" v-on:click="toggleAuditType('zip')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-file-archive"></i> Upload ZIP</button>
@@ -13,7 +13,7 @@
     </div>
     <div v-bind:class="[ (isErrorsOpen && !loading) || (loading && auditType === 'contract') ? 'col-sm-7' : 'col-sm-12']">
       <form v-on:submit.prevent="auditContract()">
-        <editor v-if="auditType === 'contract'" v-model="newAudit.contract" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
+        <editor v-if="auditType === 'contract'" v-model="auditCode" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
         <div v-if="auditType === 'repository' && !loading" class="row justify-content-center align-items-center text-center" style="height: 500px;">
           <div class="col-sm-8">
             <h1><i class="fab fa-github"></i></h1>
@@ -68,23 +68,30 @@
 
 <script>
 import axios from 'axios'
+import getWeb3 from '../assets/js/getWeb3'
+import SolCheckrContractAbi from '../assets/js/SolCheckr.abi'
+
+const SolCheckrContractAddress = '0xcdc09d92b8e8c63afd035d4fad1bf73df2e8d533'
 
 export default {
   name: 'MainComponent',
   data () {
     return {
+      web3: null,
+      account: null,
+      contractInstance: null,
       file: '',
       validFile: false,
       repoErr: null,
       zipError: null,
       isErrorsOpen: false,
       auditType: 'contract',
+      typeMap: {contract: 0, respository: 1, zip: 2},
       loading: false,
       issues: [],
       error: null,
       repoUrl: null,
-      newAudit: {
-        'contract': `pragma solidity ^0.4.18;
+      auditCode: `pragma solidity ^0.4.18;
 
 contract SampleReentrancy {
 
@@ -110,8 +117,16 @@ contract SampleReentrancy {
   function() public payable {}
 }
 `
-      }
     }
+  },
+  mounted () {
+    getWeb3().then((res) => {
+      this.web3 = res
+      this.contractInstance = new this.web3.eth.Contract(SolCheckrContractAbi, SolCheckrContractAddress)
+      this.web3.eth.getAccounts().then((accounts) => {
+        this.account = accounts[0]
+      })
+    })
   },
   methods: {
     auditContract () {
@@ -119,46 +134,80 @@ contract SampleReentrancy {
       this.issues = []
       this.error = null
 
-      if (this.auditType === 'contract') {
-        axios.post(`${process.env.ROOT_API}/audit/`, this.newAudit)
-          .then((response) => {
-            this.loading = false
-            if (response.data && response.data.success) {
-              this.$router.push({ path: `/audit/${response.data.tracking}` })
-              this.issues = response.data.issues
-            }
-          })
-          .catch((err) => {
-            this.loading = false
-            if (err.response.data && err.response.data.error) {
-              this.isErrorsOpen = true
-              this.error = err.response.data
+      this.contractInstance.methods.addAudit(this.typeMap[this.auditType]).send({ from: this.account })
+        .then((receipt) => {
+          if (receipt.events && receipt.events.AuditAdded) {
+            let payload = {
+              auditType: receipt.events.AuditAdded.returnValues.auditType,
+              author: receipt.events.AuditAdded.returnValues.author,
+              tracker: receipt.events.AuditAdded.returnValues.tracker
             }
 
-            this.highlightError()
-          })
-      } else if (this.auditType === 'repository') {
-        let re = /(?:git|ssh|https?|git@[-\w.]+):(\/\/)?(.*?)(\.git)$/
-        if (!re.test(this.repoUrl)) {
-          this.repoErr = 'The provided GitHub URL is invalid'
-          this.loading = false
-          return
-        }
-
-        let reMatch = re.exec(this.repoUrl)
-        let repoName = reMatch[2].substring(reMatch[2].indexOf('/') + 1, reMatch[2].length)
-        this.getRepoSolidityCount(repoName)
-          .then((solFileCount) => {
-            if (solFileCount <= 0) {
-              this.repoErr = 'Repository may be invalid or does not contain any Solidity file'
-              this.loading = false
-            } else {
-              this.repoErr = null
-              axios.post(`${process.env.ROOT_API}/github-audit/`, {repository_url: this.repoUrl})
+            if (this.auditType === 'contract') {
+              payload.contract = this.auditCode
+              axios.post(`${process.env.ROOT_API}/audit/`, payload)
                 .then((response) => {
                   this.loading = false
                   if (response.data && response.data.success) {
-                    this.$router.push({ path: `/github-audit/${response.data.tracking}` })
+                    this.$router.push({ path: `/audit/${response.data.tracking}` })
+                    this.issues = response.data.issues
+                  }
+                })
+                .catch((err) => {
+                  this.loading = false
+                  if (err.response.data && err.response.data.error) {
+                    this.isErrorsOpen = true
+                    this.error = err.response.data
+                  }
+
+                  this.highlightError()
+                })
+            } else if (this.auditType === 'repository') {
+              let re = /(?:git|ssh|https?|git@[-\w.]+):(\/\/)?(.*?)(\.git)$/
+              if (!re.test(this.repoUrl)) {
+                this.repoErr = 'The provided GitHub URL is invalid'
+                this.loading = false
+                return
+              }
+
+              let reMatch = re.exec(this.repoUrl)
+              let repoName = reMatch[2].substring(reMatch[2].indexOf('/') + 1, reMatch[2].length)
+              this.getRepoSolidityCount(repoName)
+                .then((solFileCount) => {
+                  if (solFileCount <= 0) {
+                    this.repoErr = 'Repository may be invalid or does not contain any Solidity file'
+                    this.loading = false
+                  } else {
+                    this.repoErr = null
+                    payload.repository_url = this.repoUrl
+                    axios.post(`${process.env.ROOT_API}/github-audit/`, payload)
+                      .then((response) => {
+                        this.loading = false
+                        if (response.data && response.data.success) {
+                          this.$router.push({ path: `/github-audit/${response.data.tracking}` })
+                        }
+                      })
+                      .catch((err) => {
+                        this.loading = false
+                        if (err.response.data && err.response.data.error) {
+                          this.isErrorsOpen = true
+                          this.error = err.response.data
+                        }
+                      })
+                  }
+                })
+            } else {
+              let formData = new FormData()
+              formData.append('file', this.file)
+              formData.append('auditType', payload.auditType)
+              formData.append('author', payload.author)
+              formData.append('tracker', payload.tracker)
+
+              axios.post(`${process.env.ROOT_API}/zip-audit/`, formData, {headers: {'Content-Type': 'multipart/form-data'}})
+                .then((response) => {
+                  this.loading = false
+                  if (response.data && response.data.success) {
+                    this.$router.push({ path: `/zip-audit/${response.data.tracking}` })
                   }
                 })
                 .catch((err) => {
@@ -169,26 +218,11 @@ contract SampleReentrancy {
                   }
                 })
             }
-          })
-      } else {
-        let formData = new FormData()
-        formData.append('file', this.file)
-
-        axios.post(`${process.env.ROOT_API}/zip-audit/`, formData, {headers: {'Content-Type': 'multipart/form-data'}})
-          .then((response) => {
-            this.loading = false
-            if (response.data && response.data.success) {
-              this.$router.push({ path: `/zip-audit/${response.data.tracking}` })
-            }
-          })
-          .catch((err) => {
-            this.loading = false
-            if (err.response.data && err.response.data.error) {
-              this.isErrorsOpen = true
-              this.error = err.response.data
-            }
-          })
-      }
+          }
+        })
+        .catch((err) => {
+          console.log(err, 'err')
+        })
     },
     highlightError () {
       let codeElemNode = document.querySelectorAll('.ace_text-layer')
