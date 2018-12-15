@@ -1,6 +1,6 @@
-import ast
 import json
 import os
+import re
 import shutil
 import subprocess
 import zipfile
@@ -17,7 +17,7 @@ REPORT_FILENAME = 'report.json'
 
 def clean_duplicates(report_dict):
     if report_dict:
-        return list({x['info']:x for x in report_dict}.values())
+        return list({x['check']: x for x in report_dict}.values())
     return dict()
 
 
@@ -42,29 +42,37 @@ def analyze_contract(contract):
         json_report = ''
         if os.path.exists(REPORT_FILENAME):
             with open(REPORT_FILENAME, 'r') as f:
-                json_report = clean_duplicates(ast.literal_eval(f.read()))
+                json_report = clean_duplicates(json.loads(f.read()))
             os.remove(REPORT_FILENAME)
 
         if 'Compilation warnings/errors' in audit_report:
-            # temporary bad way of parsing error into something like
-            # '8:21: Error: Expected primary expression.'
-            b = audit_report[audit_report.find(CONTRACT_FILENAME) +
-                             1:audit_report.rfind('\n\nINFO')]
-            broken_string = b[b.find(CONTRACT_FILENAME):]
+            limiter = '\nINFO:Detectors' if '\nINFO:Detectors' in audit_report else '\nINFO:Slither'
+            err_regex = re.compile(r'{}:(\d)+:(\d)+: (Warning|Error):'.format(CONTRACT_FILENAME))
+            err_indeces = [item.span() for item in re.finditer(err_regex, audit_report)]
+            err_list = []
+            has_error = False
 
-            separated_list = broken_string.split(':')
-            error_desc = ' '.join([x.strip() for x in separated_list[4:]])
+            for i, item in enumerate(err_indeces):
+                item_detail = ''
+                if i == len(err_indeces) - 1:
+                    item_detail = audit_report[item[1]:audit_report.find(limiter)].strip()
+                else:
+                    item_detail = audit_report[item[1]:err_indeces[i + 1][0]].strip()
+
+                broken_string = audit_report[item[0]:item[1]].split(':')
+                err_list.append({
+                    'line': broken_string[1],
+                    'character': broken_string[2],
+                    'type': broken_string[3].strip(),
+                    'detail': item_detail
+                })
 
             return {
-                'success': False,
-                'error': True,
+                'success': not has_error,
+                'error': has_error,
                 'audit_type': 'contract',
-                'filename': CONTRACT_FILENAME,
-                'lineno': int(separated_list[1]),
-                'character': int(separated_list[2]),
-                'details': error_desc[:error_desc.index('\x1b[0m\n')].strip(),
-                'code': error_desc[error_desc.index('\x1b[0m\n') +
-                                   len('\x1b[0m\n'):]
+                'detail_list': err_list,
+                'issues': json_report
             }
 
         return {
@@ -167,7 +175,7 @@ def analyze_repository(repository=None):
         json_report = ''
         if os.path.exists(REPORT_FILENAME):
             with open(REPORT_FILENAME, 'r') as f:
-                json_report = clean_duplicates(ast.literal_eval(f.read()))
+                json_report = clean_duplicates(json.loads(f.read()))
                 github_audit_instance.report = json_report
             os.remove(REPORT_FILENAME)
 
@@ -254,7 +262,7 @@ def analyze_zip(file=None):
         json_report = ''
         if os.path.exists(zip_report):
             with open(zip_report, 'r') as f:
-                json_report = clean_duplicates(ast.literal_eval(f.read()))
+                json_report = clean_duplicates(json.loads(f.read()))
                 zip_audit_instance.report = json_report
             os.remove(zip_report)
 

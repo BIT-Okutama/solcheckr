@@ -47,7 +47,7 @@ class CheckrAPIView(CreateAPIView):
         if audit_report.get('success'):
             passed_test = True  # passed or failed test
             for issue in audit_report.get('issues'):
-                if issue.get('severity') < 3:
+                if issue.get('impact_level') < 3:
                     passed_test = False
                     break
 
