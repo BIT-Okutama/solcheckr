@@ -182,9 +182,44 @@ def analyze_repository(repository=None):
                 github_audit_instance.report = json_report
             os.remove(REPORT_FILENAME)
 
+        if 'Compilation warnings/errors' in audit_report:
+            contract_names = '|'.join(all_contracts.keys())
+            limiter = '\nINFO:Detectors' if '\nINFO:Detectors' in audit_report else '\nINFO:Slither'
+            err_regex = re.compile(r'({}):(\d)+:(\d)+: (Warning|Error):'.format(contract_names))
+            err_indeces = [item.span() for item in re.finditer(err_regex, audit_report)]
+            err_list = []
+            has_error = False
+
+            for i, item in enumerate(err_indeces):
+                item_detail = ''
+                if i == len(err_indeces) - 1:
+                    item_detail = audit_report[item[1]:audit_report.find(limiter)].strip()
+                else:
+                    item_detail = audit_report[item[1]:err_indeces[i + 1][0]].strip()
+
+                broken_string = audit_report[item[0]:item[1]].split(':')
+                if broken_string[3].strip() == 'Error':
+                    has_error = True
+
+                err_list.append({
+                    'contract': broken_string[0],
+                    'line': broken_string[1],
+                    'character': broken_string[2],
+                    'type': broken_string[3].strip(),
+                    'detail': item_detail
+                })
+
+            if has_error:
+                return {
+                    'success': not has_error,
+                    'error': has_error,
+                    'audit_type': 'repository',
+                    'detail_list': err_list
+                }
+
         passed_test = True  # passed or failed test
         for issue in json_report:
-            if issue.get('severity') < 3:
+            if issue.get('impact_level') < 3:
                 passed_test = False
                 break
 
@@ -195,28 +230,6 @@ def analyze_repository(repository=None):
         # clean saved files
         if os.path.exists(save_path):
             shutil.rmtree(save_path, ignore_errors=True)
-
-        if 'Compilation warnings/errors' in audit_report:
-            # TODO!!!
-            # temporary bad way of parsing error into something like
-            # '8:21: Error: Expected primary expression.'
-            # b = audit_report[audit_report.find(CONTRACT_FILENAME) +
-            #                  1:audit_report.rfind('\n\nINFO')]
-            # broken_string = b[b.find(CONTRACT_FILENAME):]
-
-            # separated_list = broken_string.split(':')
-            # error_desc = ' '.join([x.strip() for x in separated_list[4:]])
-            return True
-            # return {
-            #     'success': False,
-            #     'error': True,
-            #     'filename': CONTRACT_FILENAME,
-            #     'lineno': int(separated_list[1]),
-            #     'character': int(separated_list[2]),
-            #     'details': error_desc[:error_desc.index('\x1b[0m\n')].strip(),
-            #     'code': error_desc[error_desc.index('\x1b[0m\n') +
-            #                        len('\x1b[0m\n'):]
-            # }
 
         return {
             'success': True,
@@ -262,6 +275,41 @@ def analyze_zip(file=None):
         audit_report = terminal_audit.stdout.decode('utf-8').strip()
         zip_audit_instance = ZipAudit(contracts=json.dumps(all_contracts))
 
+        if 'Compilation warnings/errors' in audit_report:
+            contract_names = '|'.join(all_contracts.keys())
+            limiter = '\nINFO:Detectors' if '\nINFO:Detectors' in audit_report else '\nINFO:Slither'
+            err_regex = re.compile(r'({}):(\d)+:(\d)+: (Warning|Error):'.format(contract_names))
+            err_indeces = [item.span() for item in re.finditer(err_regex, audit_report)]
+            err_list = []
+            has_error = False
+
+            for i, item in enumerate(err_indeces):
+                item_detail = ''
+                if i == len(err_indeces) - 1:
+                    item_detail = audit_report[item[1]:audit_report.find(limiter)].strip()
+                else:
+                    item_detail = audit_report[item[1]:err_indeces[i + 1][0]].strip()
+
+                broken_string = audit_report[item[0]:item[1]].split(':')
+                if broken_string[3].strip() == 'Error':
+                    has_error = True
+
+                err_list.append({
+                    'contract': broken_string[0],
+                    'line': broken_string[1],
+                    'character': broken_string[2],
+                    'type': broken_string[3].strip(),
+                    'detail': item_detail
+                })
+
+            if has_error:
+                return {
+                    'success': not has_error,
+                    'error': has_error,
+                    'audit_type': 'zip',
+                    'detail_list': err_list
+                }
+
         json_report = ''
         if os.path.exists(zip_report):
             with open(zip_report, 'r') as f:
@@ -281,28 +329,6 @@ def analyze_zip(file=None):
         # clean saved files
         shutil.rmtree(zip_dir, ignore_errors=True)
         shutil.rmtree(extracted_dir, ignore_errors=True)
-
-        if 'Compilation warnings/errors' in audit_report:
-            # TODO!!!
-            # temporary bad way of parsing error into something like
-            # '8:21: Error: Expected primary expression.'
-            # b = audit_report[audit_report.find(CONTRACT_FILENAME) +
-            #                  1:audit_report.rfind('\n\nINFO')]
-            # broken_string = b[b.find(CONTRACT_FILENAME):]
-
-            # separated_list = broken_string.split(':')
-            # error_desc = ' '.join([x.strip() for x in separated_list[4:]])
-            return True
-            # return {
-            #     'success': False,
-            #     'error': True,
-            #     'filename': CONTRACT_FILENAME,
-            #     'lineno': int(separated_list[1]),
-            #     'character': int(separated_list[2]),
-            #     'details': error_desc[:error_desc.index('\x1b[0m\n')].strip(),
-            #     'code': error_desc[error_desc.index('\x1b[0m\n') +
-            #                        len('\x1b[0m\n'):]
-            # }
 
         return {
             'success': True,
