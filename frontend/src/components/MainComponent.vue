@@ -71,7 +71,7 @@ import axios from 'axios'
 import getWeb3 from '../assets/js/getWeb3'
 import SolCheckrContractAbi from '../assets/js/SolCheckr.abi'
 
-const SolCheckrContractAddress = '0xcdc09d92b8e8c63afd035d4fad1bf73df2e8d533'
+const SolCheckrContractAddress = '0xCFFF2D96d3851176B53a030db0aF36AEF9b6797D'
 
 export default {
   name: 'MainComponent',

@@ -1,5 +1,4 @@
-/* eslint-disable */
-const abi = [
+abi = """[
     {
         "constant": true,
         "inputs": [
@@ -168,6 +167,4 @@ const abi = [
         "name": "ResultSet",
         "type": "event"
     }
-]
-
-export default abi;
+]"""
