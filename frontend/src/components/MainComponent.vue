@@ -22,7 +22,7 @@
               <div v-if="repoErr" class="alert alert-danger" role="alert">
                 {{ repoErr }}
               </div>
-              <input type="text" v-model="repoUrl" class="form-control field-input px-3" id="repository_url" aria-describedby="repository_url_help" placeholder="ex. https://github.com/githubusername/helloworld.git">
+              <input type="text" v-model="repoUrl" autocomplete="off" class="form-control field-input px-3" id="repository_url" aria-describedby="repository_url_help" placeholder="ex. https://github.com/githubusername/helloworld.git">
               <small id="repository_url_help" class="form-text text-muted">Make sure the repository is public. HTTPS and SSH is supported.<br/>Experimental feature, a lot of things to improve :)</small>
             </div>
           </div>
@@ -99,26 +99,27 @@ export default {
 
 contract SampleReentrancy {
 
-  mapping(address => uint) public balances;
+    mapping(address => uint) public balances;
 
-  function donate(address _to) public payable {
-    balances[_to] += msg.value;
-  }
-
-  function balanceOf(address _who) public view returns (uint balance) {
-    return balances[_who];
-  }
-
-  function withdraw(uint _amount) public {
-    if(balances[msg.sender] >= _amount) {
-      if(msg.sender.call.value(_amount)()) {
-        _amount;
-      }
-      balances[msg.sender] -= _amount;
+    function donate(address _to) public payable {
+      balances[_to] += msg.value;
     }
-  }
 
-  function() public payable {}
+    function balanceOf(address _who) public view returns (uint balance) {
+      return balances[_who];
+    }
+
+    function withdraw(uint _amount) public {
+      if(balances[msg.sender] >= _amount) {
+        if(msg.sender.call.value(_amount)()) {
+          _amount;
+        }
+        balances[msg.sender] -= _amount;
+      }
+    }
+
+    function() public payable {}
+
 }
 `
     }
@@ -208,7 +209,7 @@ contract SampleReentrancy {
               formData.append('file', this.file)
               formData.append('auditType', payload.auditType)
               formData.append('author', payload.author)
-              formData.append('tracking', payload.tracker)
+              formData.append('tracking', payload.tracking)
 
               axios.post(`${process.env.ROOT_API}/zip-audit/`, formData, {headers: {'Content-Type': 'multipart/form-data'}})
                 .then((response) => {
