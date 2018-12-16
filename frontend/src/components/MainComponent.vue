@@ -140,7 +140,7 @@ contract SampleReentrancy {
             let payload = {
               auditType: receipt.events.AuditAdded.returnValues.auditType,
               author: receipt.events.AuditAdded.returnValues.author,
-              tracker: receipt.events.AuditAdded.returnValues.tracker
+              tracking: receipt.events.AuditAdded.returnValues.tracker
             }
 
             if (this.auditType === 'contract') {
@@ -201,7 +201,7 @@ contract SampleReentrancy {
               formData.append('file', this.file)
               formData.append('auditType', payload.auditType)
               formData.append('author', payload.author)
-              formData.append('tracker', payload.tracker)
+              formData.append('tracking', payload.tracker)
 
               axios.post(`${process.env.ROOT_API}/zip-audit/`, formData, {headers: {'Content-Type': 'multipart/form-data'}})
                 .then((response) => {

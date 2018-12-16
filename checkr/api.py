@@ -96,7 +96,11 @@ class GithubCheckrAPIView(GenericAPIView):
             github_repo = '/'.join([x for x in url_tokens[len(url_tokens) - 2:]])
 
         try:
-            audit_report = analyze_repository(github_repo)
+            audit_report = analyze_repository(
+                github_repo,
+                request.data.get('tracking'),
+                request.data.get('author')
+            )
         except Exception as e:
             return Response(
                 {'details': 'Something wrong happened, please try again'},
@@ -158,7 +162,11 @@ class ZipCheckrAPIView(GenericAPIView):
                         {'details': 'File exceeds size limit of 30 MB'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                audit_report = analyze_zip(file_obj)
+                audit_report = analyze_zip(
+                    file_obj,
+                    request.data.get('tracking'),
+                    request.data.get('author')
+                )
         except Exception as e:
             return Response(
                 {'details': 'Something wrong happened, please try again'},

@@ -119,9 +119,9 @@ def get_contracts_from_list(save_path, repo_name, file_list=None, session=None):
     return None
 
 
-def analyze_repository(repository=None):
+def analyze_repository(repository=None, tracking=None, author=None):
     """Get all Solidity files from a GitHub repository and analyze"""
-    if repository:
+    if repository and tracking and author:
         # GitHub API URLs
         github_api = 'https://api.github.com/search/code?q=extension:sol+repo:'
         github_url = '{}{}'.format(github_api, repository)
@@ -136,7 +136,11 @@ def analyze_repository(repository=None):
 
         # Initialize new GithubAudit instance
         save_path = initialize_directory(repository)
-        github_audit_instance = GithubAudit(repo=repository)
+        github_audit_instance = GithubAudit(
+            repo=repository,
+            tracking=tracking,
+            author=author,
+        )
 
         # Fetch Solidity file list from GitHub API
         all_contracts = {}
@@ -244,8 +248,8 @@ def analyze_repository(repository=None):
     return None
 
 
-def analyze_zip(file=None):
-    if file:
+def analyze_zip(file=None, tracking=None, author=None):
+    if file and tracking and author:
         extracted_dir = 'extracted'
         zip_dir = 'zipcontracts'
         zip_report = 'zipreport.json'
@@ -273,7 +277,11 @@ def analyze_zip(file=None):
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         audit_report = terminal_audit.stdout.decode('utf-8').strip()
-        zip_audit_instance = ZipAudit(contracts=json.dumps(all_contracts))
+        zip_audit_instance = ZipAudit(
+            contracts=json.dumps(all_contracts),
+            tracking=tracking,
+            author=author,
+        )
 
         if 'Compilation warnings/errors' in audit_report:
             contract_names = '|'.join(all_contracts.keys())
