@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from checkr.models import Audit, GithubAudit, ZipAudit
 from checkr.serializers import AuditSerializer, GithubAuditSerializer, ZipAuditSerializer
 from checkr.utils import analyze_contract, analyze_repository, analyze_zip
+from checkr.web3 import broadcast_audit_result
 
 
 class CheckrAPIView(CreateAPIView):
@@ -57,6 +58,8 @@ class CheckrAPIView(CreateAPIView):
             )
             headers = self.get_success_headers(serializer.data)
             audit_report.update({'tracking': serializer.instance.tracking})
+
+            broadcast_audit_result(serializer.instance.tracking, passed_test)
 
             return Response(audit_report, headers=headers,
                             status=status.HTTP_201_CREATED)

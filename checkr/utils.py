@@ -9,6 +9,7 @@ import requests
 from django.conf import settings
 
 from checkr.models import GithubAudit, ZipAudit
+from checkr.web3 import broadcast_audit_result
 
 # Constant strings
 CONTRACT_FILENAME = 'contract.sol'
@@ -92,6 +93,10 @@ def analyze_contract(contract):
 def initialize_directory(repo_name):
     if repo_name:
         folder_name = repo_name.replace('/', '+')
+
+        if not os.path.exists('contracts'):
+            os.mkdir('contracts')
+
         save_path = os.path.join('contracts', folder_name)
         if not os.path.exists(save_path):
             os.mkdir(save_path)
@@ -232,6 +237,9 @@ def analyze_repository(repository=None, tracking=None, author=None):
         github_audit_instance.result = passed_test
         github_audit_instance.save()
 
+        # Broadcast result to blockchain
+        broadcast_audit_result(tracking, passed_test)
+
         # clean saved files
         shutil.rmtree(save_path, ignore_errors=True)
 
@@ -336,6 +344,9 @@ def analyze_zip(file=None, tracking=None, author=None):
 
         zip_audit_instance.result = passed_test
         zip_audit_instance.save()
+
+        # Broadcast result to blockchain
+        broadcast_audit_result(tracking, passed_test)
 
         # clean saved files
         shutil.rmtree(zip_dir, ignore_errors=True)
