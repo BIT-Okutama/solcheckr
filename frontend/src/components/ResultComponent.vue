@@ -6,7 +6,7 @@
           <div>
           <h5>Security Report for</h5>
           <h4 class="font-weight-bold"><i class="fas fa-code"></i> Submitted code</h4>
-          <small>{{ auditInfo.submitted }}</small>
+          <small>Submitted by: {{ auditInfo.author }}<br/>{{ auditInfo.submitted }}</small>
           </div>
           <div>
             <span class="font-weight-bold">Share this report:</span><br/>
@@ -40,9 +40,9 @@
             </div>
 
             <div v-bind:id="`collapse${index}`" v-bind:class="index === 0 ? 'show' : ''" class="collapse" v-bind:aria-labelledby="`heading${index}`" data-parent="#reportAccordion">
-              <div class="card-body">
-                <ul class="list-unstyled code">
-                  <li v-for="(instance, instance_index) in issue.instances" :key="instance_index" v-bind:class="[`list-pre${instance.severity}`]"><span class="red-box"></span> {{ instance.info }}</li>
+              <div class="card-body code">Confidence: {{ issue.confidence }}<br/>Wiki: <a target="_blank" v-bind:href="issue.wiki">{{ issue.wiki }}</a><br/>
+                <ul class="list-unstyled">
+                  <li v-for="(instance, instance_index) in issue.instances" :key="instance_index" v-bind:class="[`list-pre${instance.impact_level}`]"> {{ instance.description }}</li>
                 </ul>
               </div>
             </div>
@@ -78,17 +78,19 @@ export default {
           let previousName = ''
           let rawReport = {}
           this._.forEach(this.auditInfo.report, (item) => {
-            if (item.description !== previousName && !rawReport[item.description]) {
-              rawReport[item.description] = {
-                name: item.description,
-                severity: item.severity,
+            if (item.check !== previousName && !rawReport[item.check]) {
+              rawReport[item.check] = {
+                name: item.name,
+                severity: item.impact_level,
+                confidence: item.confidence,
+                wiki: item.wiki,
                 instances: [item]
               }
             } else {
-              rawReport[item.description].instances.push(item)
+              rawReport[item.check].instances.push(item)
             }
           })
-          this.sortedReport = this._.orderBy(rawReport, ['severity', 'name'], ['asc', 'asc'])
+          this.sortedReport = this._.orderBy(rawReport, ['severity', 'description'], ['asc', 'asc'])
         }
       })
       .catch((err) => {

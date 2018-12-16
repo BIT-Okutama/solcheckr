@@ -41,7 +41,10 @@
           </div>
         </div>
       </form>
-      <div v-if="loading === true && auditType !== 'contract'" style="height: 500px" class="d-flex justify-content-center align-items-center"><div class="loader"></div></div>
+      <div v-if="loading === true && auditType !== 'contract'" style="height: 500px; margin-top: 150px;" class="text-center pt-5">
+        <div class="loader mx-auto my-0"></div>
+        <p class="montserrat mt-4 animate-flicker font-weight-bold">{{ loadingMessage }}</p>
+      </div>
     </div>
     <div class="col-sm-5" v-if="isErrorsOpen || (loading === true && auditType === 'contract')">
       <div class="errors-labels">
@@ -79,6 +82,7 @@ export default {
     return {
       web3: null,
       account: null,
+      loadingMessage: 'Waiting for transaction to complete...',
       contractInstance: null,
       file: '',
       validFile: false,
@@ -136,6 +140,7 @@ contract SampleReentrancy {
 
       this.contractInstance.methods.addAudit(this.typeMap[this.auditType]).send({ from: this.account })
         .then((receipt) => {
+          this.loadingMessage = 'Analyzing code and publishing result to blockchain...'
           if (receipt.events && receipt.events.AuditAdded) {
             let payload = {
               auditType: receipt.events.AuditAdded.returnValues.auditType,
@@ -155,6 +160,7 @@ contract SampleReentrancy {
                 })
                 .catch((err) => {
                   this.loading = false
+                  this.loadingMessage = 'Waiting for transaction to complete...'
                   if (err.response.data && err.response.data.error) {
                     this.isErrorsOpen = true
                     this.error = err.response.data
@@ -189,6 +195,7 @@ contract SampleReentrancy {
                       })
                       .catch((err) => {
                         this.loading = false
+                        this.loadingMessage = 'Waiting for transaction to complete...'
                         if (err.response.data && err.response.data.error) {
                           this.isErrorsOpen = true
                           this.error = err.response.data
@@ -212,6 +219,7 @@ contract SampleReentrancy {
                 })
                 .catch((err) => {
                   this.loading = false
+                  this.loadingMessage = 'Waiting for transaction to complete...'
                   if (err.response.data && err.response.data.error) {
                     this.isErrorsOpen = true
                     this.error = err.response.data

@@ -114,3 +114,12 @@ a {
   font-family: montserrat;
   background: #fff;
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+.animate-flicker {
+    animation: fadeIn 1s infinite alternate;
+}
