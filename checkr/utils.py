@@ -16,12 +16,6 @@ CONTRACT_FILENAME = 'contract.sol'
 REPORT_FILENAME = 'report.json'
 
 
-def clean_duplicates(report_dict):
-    if report_dict:
-        return list({x['check']: x for x in report_dict}.values())
-    return dict()
-
-
 def analyze_contract(contract):
     """Analyze a single contract."""
     if contract:
@@ -32,7 +26,8 @@ def analyze_contract(contract):
 
         # use Slither through subprocess
         terminal_audit = subprocess.run(
-            ['slither', CONTRACT_FILENAME, '--json', REPORT_FILENAME],
+            ['slither', CONTRACT_FILENAME, '--exclude', 'naming-convention',
+             '--json', REPORT_FILENAME],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         audit_report = terminal_audit.stdout.decode('utf-8').strip()
@@ -43,7 +38,7 @@ def analyze_contract(contract):
         json_report = ''
         if os.path.exists(REPORT_FILENAME):
             with open(REPORT_FILENAME, 'r') as f:
-                json_report = clean_duplicates(json.loads(f.read()))
+                json_report = json.loads(f.read())
             os.remove(REPORT_FILENAME)
 
         if 'Compilation warnings/errors' in audit_report:
@@ -179,7 +174,8 @@ def analyze_repository(repository=None, tracking=None, author=None):
 
         # Audit downloaded files
         terminal_audit = subprocess.run(
-            ['slither', save_path, '--json', REPORT_FILENAME],
+            ['slither', save_path, '--exclude', 'naming-convention',
+             '--json', REPORT_FILENAME],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         audit_report = terminal_audit.stdout.decode('utf-8').strip()
@@ -187,7 +183,7 @@ def analyze_repository(repository=None, tracking=None, author=None):
         json_report = ''
         if os.path.exists(REPORT_FILENAME):
             with open(REPORT_FILENAME, 'r') as f:
-                json_report = clean_duplicates(json.loads(f.read()))
+                json_report = json.loads(f.read())
                 github_audit_instance.report = json_report
             os.remove(REPORT_FILENAME)
 
@@ -261,7 +257,6 @@ def analyze_zip(file=None, tracking=None, author=None):
         extracted_dir = 'extracted'
         zip_dir = 'zipcontracts'
         zip_report = 'zipreport.json'
-
         if not os.path.exists(zip_dir):
             os.mkdir(zip_dir)
 
@@ -281,7 +276,8 @@ def analyze_zip(file=None, tracking=None, author=None):
                     shutil.move(os.path.join(root, name), zip_dir)
 
         terminal_audit = subprocess.run(
-            ['slither', zip_dir, '--json', zip_report],
+            ['slither', zip_dir, '--exclude', 'naming-convention',
+             '--json', zip_report],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         audit_report = terminal_audit.stdout.decode('utf-8').strip()
@@ -332,13 +328,13 @@ def analyze_zip(file=None, tracking=None, author=None):
         json_report = ''
         if os.path.exists(zip_report):
             with open(zip_report, 'r') as f:
-                json_report = clean_duplicates(json.loads(f.read()))
+                json_report = json.loads(f.read())
                 zip_audit_instance.report = json_report
             os.remove(zip_report)
 
         passed_test = True  # passed or failed test
         for issue in json_report:
-            if issue.get('severity') < 3:
+            if issue.get('impact_level') < 3:
                 passed_test = False
                 break
 
@@ -357,7 +353,7 @@ def analyze_zip(file=None, tracking=None, author=None):
             'error': False,
             'audit_type': 'zip',
             'contracts': all_contracts,
-            'tracking': zip_audit_instance.tracking,
+            'tracking': tracking,
             'issues': json_report
         }
 
