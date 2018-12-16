@@ -86,7 +86,7 @@ export default {
       zipError: null,
       isErrorsOpen: false,
       auditType: 'contract',
-      typeMap: {contract: 0, respository: 1, zip: 2},
+      typeMap: {contract: 0, repository: 1, zip: 2},
       loading: false,
       issues: [],
       error: null,
