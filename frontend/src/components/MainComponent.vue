@@ -49,10 +49,13 @@
     <div class="col-sm-5" v-if="isErrorsOpen || (loading === true && auditType === 'contract')">
       <div class="errors-labels">
         <h4 v-if="error !== null"> </h4>
-        <h4 v-on:click="toggleErrors()"><a href="#"><i class="far fa-window-close"></i></a></h4>
+        <h4 v-if="!loading" v-on:click="toggleErrors()"><a href="#"><i class="far fa-window-close"></i></a></h4>
       </div>
 
-      <div v-if="loading === true && auditType === 'contract'" class="loader"></div>
+      <div class="text-center mt-5">
+        <div v-if="loading === true && auditType === 'contract'" class="loader mx-auto my-0"></div>
+        <p v-if="loading === true && auditType === 'contract'" class="montserrat mt-4 animate-flicker font-weight-bold">{{ loadingMessage }}</p>
+      </div>
 
       <div>
         <div class="alert alert-danger" role="alert" v-if="error !== null">
@@ -97,7 +100,7 @@ export default {
       repoUrl: null,
       auditCode: `pragma solidity ^0.4.18;
 
-contract SampleReentrancy {
+contract MiniDAO {
 
     mapping(address => uint) public balances;
 
@@ -105,17 +108,10 @@ contract SampleReentrancy {
       balances[_to] += msg.value;
     }
 
-    function balanceOf(address _who) public view returns (uint balance) {
-      return balances[_who];
-    }
-
     function withdraw(uint _amount) public {
-      if(balances[msg.sender] >= _amount) {
-        if(msg.sender.call.value(_amount)()) {
-          _amount;
-        }
-        balances[msg.sender] -= _amount;
-      }
+      require(balances[msg.sender] >= _amount);
+      msg.sender.call.value(_amount)();
+      balances[msg.sender] -= _amount;
     }
 
     function() public payable {}
