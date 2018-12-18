@@ -81,7 +81,6 @@ a {
   padding: 0px 10px;
   margin-right: 10px;
   font-size: 12px;
-  width: 300px;
 }
 
 .list-pre0:before {
@@ -122,4 +121,10 @@ a {
 }
 .animate-flicker {
     animation: fadeIn 1s infinite alternate;
+}
+
+@media (min-width: 1024px) {
+  .link-input {
+    width: 300px;
+  }
 }

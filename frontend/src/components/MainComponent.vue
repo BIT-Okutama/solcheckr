@@ -2,7 +2,10 @@
   <div class="container">
     <div class="row mt-5 mb-5">
     <div class="col-sm-12 mb-3 text-center font-weight-bold">
-      <div class="alert alert-dark">{{ headerMessage }}<p>To improve SolCheckr's analysis, contribute to <a target="_blank" href="https://github.com/trailofbits/slither">Slither</a>, make sure to read their docs <a target="_blank" href="https://github.com/trailofbits/slither/wiki/API-examples">here</a>.</p></div>
+      <div class="alert alert-dark">
+        {{ headerMessage }}
+        <p class="mt-2">To improve SolCheckr's analysis, contribute to <a target="_blank" href="https://github.com/trailofbits/slither">Slither</a>, make sure to read their docs <a target="_blank" href="https://github.com/trailofbits/slither/wiki/API-examples">here</a>.</p>
+        <p>Also, SolCheckr isn't so mobile-friendly yet, so we recommend you use a desktop :)</p></div>
     </div>
     <div class="col-xs-12 col-sm-3 mb-3"><button :disabled="!account || loading || (auditType === 'contract' && auditCode.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && !validFile)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat w-100 px-5" v-on:click="auditContract()">Submit</button></div>
     <div class="col-xs-12 col-sm-3 mb-3"><button :disabled="loading || auditType === 'contract'" v-on:click="toggleAuditType('contract')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat w-100 px-5"><i class="fas fa-code"></i> Code scan</button></div>

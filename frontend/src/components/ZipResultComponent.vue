@@ -2,15 +2,22 @@
   <div>
     <div class="w-100 px-5">
       <div class="row mt-5 mb-5">
-        <div class="col-sm-12 mb-5 d-flex justify-content-between align-items-center">
-          <div>
-          <h5>Security Report for</h5>
-          <h4 class="font-weight-bold"><i class="fas fa-file-archive"></i> Submitted ZIP file</h4>
-          <small>Submitted by: {{ auditInfo.author }}<br/>{{ auditInfo.submitted }}</small>
+        <div class="col-sm-12 mb-3 text-center font-weight-bold">
+          <div class="alert alert-dark">
+            <p>To improve SolCheckr's analysis, contribute to <a target="_blank" href="https://github.com/trailofbits/slither">Slither</a>, make sure to read their docs <a target="_blank" href="https://github.com/trailofbits/slither/wiki/API-examples">here</a>.</p>
+            <p>SolCheckr isn't so mobile-friendly yet, so we recommend you use a desktop :)</p></div>
+        </div>
+        <div class="col-sm-12 mb-5">
+          <div class="row">
+          <div class="col-xs-6 col-sm-6" style="overflow-wrap: break-word;">
+            <h5>Security Report for</h5>
+            <h4 class="font-weight-bold"><i class="fas fa-code"></i> Submitted code</h4>
+            <small><b>Submitted by:</b> {{ auditInfo.author }}<br/><b>{{ auditInfo.submitted }}</b></small>
           </div>
-          <div>
+          <div class="col-xs-6 col-sm-6 pt-4">
             <span class="font-weight-bold">Share this report:</span><br/>
-            <span class="mb-5"><input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <i v-on:click="copyLink('pageLink')" class="fas fa-copy"></i></span>
+            <input class="link-input" type="text" name="pageLink" id="pageLink" v-bind:value="pageLink"> <a href="javascript:void(0);"><i v-on:click="copyLink()" class="fas fa-copy"></i></a>
+          </div>
           </div>
         </div>
         <div class="col-sm-12 mb-2 text-center font-weight-bold">
@@ -42,10 +49,9 @@
         <div class="accordion text-dark mt-5" id="reportAccordion">
           <div v-for="(issue, index) in sortedReport" :key="index" class="card">
             <div class="card-header pl-1 font-weight-bold" v-bind:id="`heading${index}`">
-              <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                <button v-bind:class="index === 0 ? '' : 'collapsed'" class="btn w-75 bg-transparent text-left" type="button" data-toggle="collapse" v-bind:data-target="`#collapse${index}`" v-bind:aria-expanded="index === 0" v-bind:aria-controls="`collapse${index}`"><span v-bind:class="[classMap[issue.severity]]" class="badge badge-pill mr-2" style="width: 120px;">{{ severityMap[issue.severity] }}</span> {{ issue.name }}
+              <h5 class="mb-0 d-flex justify-content-between align-items-center" style="overflow-x: auto;">
+                <button v-bind:class="index === 0 ? '' : 'collapsed'" class="btn w-100 bg-transparent text-left" type="button" data-toggle="collapse" v-bind:data-target="`#collapse${index}`" v-bind:aria-expanded="index === 0" v-bind:aria-controls="`collapse${index}`"><span v-bind:class="[classMap[issue.severity]]" class="badge badge-pill mr-2" style="width: 120px;">{{ severityMap[issue.severity] }}</span> {{ issue.name }} <b class="ml-3">[ {{ issue.instances.length }} ]</b>
                 </button>
-                <span class="badge badge-pill text-dark">{{ issue.instances.length }}</span>
               </h5>
             </div>
 
@@ -124,7 +130,7 @@ export default {
       this.openedContract = name
     },
     copyLink (copyId) {
-      var copyText = document.getElementById(copyId)
+      var copyText = document.getElementById('pageLink')
       copyText.select()
       document.execCommand('copy')
     }
