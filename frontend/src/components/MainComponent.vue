@@ -1,16 +1,13 @@
 <template>
   <div class="container">
     <div class="row mt-5 mb-5">
-    <div class="col-sm-12">
-      <div class="d-flex justify-content-between">
-        <div class="mb-3">
-          <button :disabled="loading || (auditType === 'contract' && auditCode.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && !validFile)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat px-5" v-on:click="auditContract()">Submit</button>
-          <button :disabled="loading || auditType === 'contract'" v-on:click="toggleAuditType('contract')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-code"></i> Code scan</button>
-          <button :disabled="loading || auditType === 'repository'" v-on:click="toggleAuditType('repository')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fab fa-github"></i> GitHub scan</button>
-          <button :disabled="loading || auditType === 'zip'" v-on:click="toggleAuditType('zip')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat px-5"><i class="fas fa-file-archive"></i> Upload ZIP</button>
-        </div>
-      </div>
+    <div class="col-sm-12 mb-3 text-center font-weight-bold">
+      <div class="alert alert-dark">{{ headerMessage }}<p>To improve SolCheckr's analysis, contribute to <a target="_blank" href="https://github.com/trailofbits/slither">Slither</a>, make sure to read their docs <a target="_blank" href="https://github.com/trailofbits/slither/wiki/API-examples">here</a>.</p></div>
     </div>
+    <div class="col-xs-12 col-sm-3 mb-3"><button :disabled="!account || loading || (auditType === 'contract' && auditCode.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && !validFile)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat w-100 px-5" v-on:click="auditContract()">Submit</button></div>
+    <div class="col-xs-12 col-sm-3 mb-3"><button :disabled="loading || auditType === 'contract'" v-on:click="toggleAuditType('contract')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat w-100 px-5"><i class="fas fa-code"></i> Code scan</button></div>
+    <div class="col-xs-12 col-sm-3 mb-3"><button :disabled="loading || auditType === 'repository'" v-on:click="toggleAuditType('repository')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat w-100 px-5"><i class="fab fa-github"></i> GitHub scan</button></div>
+    <div class="col-xs-12 col-sm-3 mb-3"><button :disabled="loading || auditType === 'zip'" v-on:click="toggleAuditType('zip')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat w-100 px-5"><i class="fas fa-file-archive"></i> Upload ZIP</button></div>
     <div v-bind:class="[ (isErrorsOpen && !loading) || (loading && auditType === 'contract') ? 'col-sm-7' : 'col-sm-12']">
       <form v-on:submit.prevent="auditContract()">
         <editor v-if="auditType === 'contract'" v-model="auditCode" @init="editorInit" lang="solidity" theme="mono_industrial" height="500"></editor>
@@ -22,7 +19,7 @@
               <div v-if="repoErr" class="alert alert-danger" role="alert">
                 {{ repoErr }}
               </div>
-              <input type="text" v-model="repoUrl" autocomplete="off" class="form-control field-input px-3" id="repository_url" aria-describedby="repository_url_help" placeholder="ex. https://github.com/githubusername/helloworld.git">
+              <input type="text" v-model="repoUrl" autocomplete="off" required="" class="form-control field-input px-3" id="repository_url" aria-describedby="repository_url_help" placeholder="ex. https://github.com/githubusername/helloworld.git">
               <small id="repository_url_help" class="form-text text-muted">Make sure the repository is public. HTTPS and SSH is supported.<br/>Experimental feature, a lot of things to improve :)</small>
             </div>
           </div>
@@ -85,6 +82,7 @@ export default {
     return {
       web3: null,
       account: null,
+      headerMessage: 'Make sure you are connected to Ropsten Test Network to use the app.',
       loadingMessage: 'Waiting for transaction to complete...',
       contractInstance: null,
       file: '',
@@ -125,7 +123,13 @@ contract MiniDAO {
       this.web3 = res
       this.contractInstance = new this.web3.eth.Contract(SolCheckrContractAbi, SolCheckrContractAddress)
       this.web3.eth.getAccounts().then((accounts) => {
+        if (accounts.length === 0) {
+          this.headerMessage = 'No MetaMask accounts found! Please check MetaMask and refresh the page'
+        }
         this.account = accounts[0]
+      }).catch((err) => {
+        this.headerMessage = 'MetaMask is required to use this app, please install MetaMask first'
+        console.log(err, 'err!!')
       })
     })
   },
