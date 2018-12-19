@@ -2,10 +2,10 @@
   <div class="container">
     <div class="row mt-5 mb-5">
     <div class="col-sm-12 mb-3 text-center font-weight-bold">
-      <div class="alert alert-dark">
+      <div v-bind:class="headerMessage === 'Note: Make sure you are connected to Ropsten Test Network to use the app.' ? 'alert-dark' : 'alert-danger'" class="alert">
         {{ headerMessage }}
-        <p class="mt-2">To improve SolCheckr's analysis, contribute to <a target="_blank" href="https://github.com/trailofbits/slither">Slither</a>, make sure to read their docs <a target="_blank" href="https://github.com/trailofbits/slither/wiki/API-examples">here</a>.</p>
-        <p>Also, SolCheckr isn't so mobile-friendly yet, so we recommend you use a desktop :)</p></div>
+        <p class="mt-2" v-if="headerMessage === 'Note: Make sure you are connected to Ropsten Test Network to use the app.'">To improve SolCheckr's analysis, contribute to <a target="_blank" href="https://github.com/trailofbits/slither">Slither</a>, make sure to read their docs <a target="_blank" href="https://github.com/trailofbits/slither/wiki/API-examples">here</a>.</p>
+        <p v-if="headerMessage === 'Note: Make sure you are connected to Ropsten Test Network to use the app.'">Also, SolCheckr isn't so mobile-friendly yet, so we recommend you use a desktop :)</p></div>
     </div>
     <div class="col-xs-12 col-sm-3 mb-3"><button :disabled="!account || loading || (auditType === 'contract' && auditCode.trim().length < 25) || (auditType === 'repository' && !repoUrl) || (auditType === 'zip' && !validFile)" type="submit" class="btn btn-md btn-dark font-weight-bold montserrat w-100 px-5" v-on:click="auditContract()">Submit</button></div>
     <div class="col-xs-12 col-sm-3 mb-3"><button :disabled="loading || auditType === 'contract'" v-on:click="toggleAuditType('contract')" type="button" class="btn btn-md btn-outline-dark font-weight-bold montserrat w-100 px-5"><i class="fas fa-code"></i> Code scan</button></div>
@@ -85,7 +85,7 @@ export default {
     return {
       web3: null,
       account: null,
-      headerMessage: 'Make sure you are connected to Ropsten Test Network to use the app.',
+      headerMessage: 'Note: Make sure you are connected to Ropsten Test Network to use the app.',
       loadingMessage: 'Waiting for transaction to complete...',
       contractInstance: null,
       file: '',
@@ -127,11 +127,11 @@ contract MiniDAO {
       this.contractInstance = new this.web3.eth.Contract(SolCheckrContractAbi, SolCheckrContractAddress)
       this.web3.eth.getAccounts().then((accounts) => {
         if (accounts.length === 0) {
-          this.headerMessage = 'No MetaMask accounts found! Please check MetaMask and refresh the page'
+          this.headerMessage = 'No MetaMask accounts found! Please check MetaMask and refresh the page.'
         }
         this.account = accounts[0]
       }).catch((err) => {
-        this.headerMessage = 'MetaMask is required to use this app, please install MetaMask first'
+        this.headerMessage = 'MetaMask is required to use this app, please install MetaMask first.'
         console.log(err, 'err!!')
       })
     })

@@ -11,7 +11,7 @@
           <div class="row">
           <div class="col-xs-6 col-sm-6" style="overflow-wrap: break-word;">
             <h5>Security Report for</h5>
-            <h4 class="font-weight-bold"><i class="fas fa-code"></i> Submitted code</h4>
+            <h4 class="font-weight-bold"><i class="fas fa-file-archive"></i> Submitted ZIP file</h4>
             <small><b>Submitted by:</b> {{ auditInfo.author }}<br/><b>{{ auditInfo.submitted }}</b></small>
           </div>
           <div class="col-xs-6 col-sm-6 pt-4">
